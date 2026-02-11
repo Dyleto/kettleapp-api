@@ -11,6 +11,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { globalErrorHandler } from "./middleware/errorHandler";
 import { httpLogger } from "./middleware/httpLogger";
+import mongoSanitize from "express-mongo-sanitize";
 
 dotenv.config();
 const app = express();
@@ -96,6 +97,3 @@ connectDB().then(() => {
     console.log(`✅ Server running on port ${PORT}`);
   });
 });
-function mongoSanitize(): any {
-  throw new Error("Function not implemented.");
-}
