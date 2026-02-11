@@ -24,10 +24,8 @@ const UserSchema: Schema = new Schema(
     lastName: { type: String, trim: true },
     isAdmin: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
-
-UserSchema.index({ email: 1 });
 
 const User = model<IUser>("User", UserSchema);
 

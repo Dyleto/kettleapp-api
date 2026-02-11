@@ -7,11 +7,32 @@ import cookieParser from "cookie-parser";
 import session from "express-session";
 import authRoutes from "./routes/auth";
 import MongoStore from "connect-mongo";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import { globalErrorHandler } from "./middleware/errorHandler";
+import { httpLogger } from "./middleware/httpLogger";
 
 dotenv.config();
 const app = express();
 
 app.set("trust proxy", 1);
+
+app.use(helmet());
+
+// Sécurité Injection NoSQL
+app.use(mongoSanitize());
+
+app.use(httpLogger);
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limite chaque IP à 100 requêtes par "windowMs"
+  standardHeaders: true, // Retourne les infos de rate limit dans les headers `RateLimit-*`
+  legacyHeaders: false, // Désactive les headers `X-RateLimit-*`
+  message: "Trop de requêtes depuis cette IP, veuillez réessayer plus tard.",
+});
+
+app.use(limiter);
 
 app.use(
   cors({
@@ -21,7 +42,7 @@ app.use(
       "https://www.kettleapp.fr",
     ],
     credentials: true,
-  })
+  }),
 );
 
 app.use(cookieParser());
@@ -52,12 +73,20 @@ app.use(
       domain:
         process.env.NODE_ENV === "production" ? ".kettleapp.fr" : undefined,
     },
-  })
+  }),
 );
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api", routes);
+
+app.use("*", (req, res, next) => {
+  const err: any = new Error(`Route ${req.originalUrl} non trouvée`);
+  err.statusCode = 404;
+  next(err);
+});
+
+app.use(globalErrorHandler);
 
 const PORT = process.env.PORT || 3000;
 
@@ -67,3 +96,6 @@ connectDB().then(() => {
     console.log(`✅ Server running on port ${PORT}`);
   });
 });
+function mongoSanitize(): any {
+  throw new Error("Function not implemented.");
+}

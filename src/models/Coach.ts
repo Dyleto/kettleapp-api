@@ -16,10 +16,8 @@ const CoachSchema: Schema = new Schema(
       unique: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
-
-CoachSchema.index({ userId: 1 });
 
 const Coach = model<ICoach>("Coach", CoachSchema);
 
