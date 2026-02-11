@@ -8,6 +8,11 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.18.2",
+    "@types/node": "^25.2.3",
     "axios": "^1.13.2",
     "connect-mongo": "^5.1.0",
     "cookie-parser": "^1.4.7",
@@ -25,11 +30,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/cookie-parser": "^1.4.10",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/express-session": "^1.18.2",
-    "@types/node": "^25.2.3",
     "nodemon": "^3.1.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0"
