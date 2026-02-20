@@ -36,6 +36,7 @@ const SessionSchema = new Schema(
       required: true,
     },
     order: { type: Number, required: true },
+    notes: { type: String },
     warmup: {
       exercises: [
         {

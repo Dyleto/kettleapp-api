@@ -157,9 +157,9 @@ export const verifyInviteToken = catchAsync(
 );
 
 export const logout = catchAsync(async (req: Request, res: Response) => {
-  req.session.destroy((err) => {
-    if (err) throw new AppError("Erreur de déconnexion", 500);
-    res.clearCookie("connect.sid");
-    res.status(200).json({ message: "Déconnexion réussie" });
+  await new Promise<void>((resolve, reject) => {
+    req.session.destroy((err) => (err ? reject(err) : resolve()));
   });
+  res.clearCookie("connect.sid");
+  res.status(200).json({ message: "Déconnexion réussie" });
 });

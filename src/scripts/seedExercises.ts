@@ -200,7 +200,7 @@ const seedExercises = async () => {
     // Note: Assure-toi que c'est un ObjectId valide (24 caractères hex).
     // Si '69975a328f042b5b6078db27' est un exemple, remplace-le par le vrai si différent.
     // D'après ta demande, c'est celui-ci que tu veux utiliser.
-    const COACH_ID = "69975a328f042b5b6078db27";
+    const COACH_ID = "693460efc4e3623b23c357cb";
 
     console.log(`👤 Création des exercices pour le Coach ID : ${COACH_ID}`);
 

@@ -9,6 +9,7 @@ import Exercise from "../models/Exercise";
 import { IUser } from "../models/User";
 import Program from "../models/Program";
 import Session from "../models/Session";
+import { isValidObjectId } from "mongoose";
 
 // --------------------------------------------------------------------------
 // INVITATIONS
@@ -214,6 +215,21 @@ export const deleteExercise = catchAsync(
     const coach = res.locals.coach as ICoach;
     const { id } = req.params;
 
+    // Vérifier si l'exercice est utilisé dans des sessions
+    const usedInSession = await Session.findOne({
+      $or: [
+        { "warmup.exercises.exerciseId": id },
+        { "workout.exercises.exerciseId": id },
+      ],
+    });
+
+    if (usedInSession) {
+      throw new AppError(
+        "Cet exercice est utilisé dans une séance, impossible de le supprimer",
+        400,
+      );
+    }
+
     const result = await Exercise.deleteOne({ _id: id, createdBy: coach._id });
 
     if (result.deletedCount === 0)
@@ -232,6 +248,17 @@ export const updateProgramSessions = catchAsync(
     const coach = res.locals.coach as ICoach;
     const { clientId } = req.params;
     const { sessions } = req.body;
+
+    if (!Array.isArray(sessions)) {
+      throw new AppError("Le champ 'sessions' doit être un tableau", 400);
+    }
+
+    const client = await Client.findOne({
+      _id: clientId,
+      "coaches.coachId": coach._id,
+    });
+
+    if (!client) throw new AppError("Client non trouvé ou accès refusé", 404);
 
     let program = await Program.findOne({ clientId, coachId: coach._id });
 
@@ -259,17 +286,22 @@ export const updateProgramSessions = catchAsync(
 
     const operations = sessions.map((sessionData: any, index: number) => {
       const sessionPayload = {
-        ...sessionData,
+        notes: sessionData.notes,
+        warmup: sessionData.warmup,
+        workout: sessionData.workout,
         programId: program._id,
         order: index + 1,
       };
 
-      if (sessionData._id && existingIds.includes(sessionData._id)) {
+      if (
+        sessionData._id &&
+        isValidObjectId(sessionData._id) &&
+        existingIds.includes(sessionData._id)
+      ) {
         return Session.findByIdAndUpdate(sessionData._id, sessionPayload, {
           new: true,
         });
       } else {
-        delete sessionPayload._id;
         return Session.create(sessionPayload);
       }
     });
