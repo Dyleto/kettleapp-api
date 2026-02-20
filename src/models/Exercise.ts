@@ -4,7 +4,7 @@ export interface IExercise extends Document {
   name: string;
   description?: string;
   videoUrl?: string;
-  type: "warmup" | "exercise";
+  type: "warmup" | "workout";
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -26,13 +26,13 @@ const ExerciseSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ["warmup", "exercise"],
+      enum: ["warmup", "workout"],
       required: true,
-      default: "exercise",
+      default: "workout",
     },
     createdBy: { type: Schema.Types.ObjectId, ref: "Coach", required: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 ExerciseSchema.index({ createdBy: 1 });

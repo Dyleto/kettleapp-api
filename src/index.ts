@@ -65,6 +65,7 @@ app.use(
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
       touchAfter: 24 * 3600, // Lazy session update (1 day)
+      collectionName: "auth_sessions",
     }),
     cookie: {
       secure: process.env.NODE_ENV === "production",

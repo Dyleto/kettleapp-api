@@ -14,7 +14,13 @@ router.post("/generate-invitation", coachController.generateInvitation);
 router.get("/clients", coachController.getClients);
 router.get("/clients/:id", coachController.getClientDetails);
 
-// EXERCICES (Stats en premier avant /:id sinon conflit de route)
+// PROGRAMMES & SESSIONS
+router.put(
+  "/clients/:clientId/program/sessions",
+  coachController.updateProgramSessions,
+);
+
+// EXERCICES
 router.get("/exercises/stats", coachController.getExercisesStats);
 router.get("/exercises", coachController.getExercises);
 router.post("/exercises", coachController.createExercise);
