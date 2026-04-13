@@ -1,4 +1,5 @@
-import { ICoach } from "../models/Coach";
+﻿import { ICoach } from "../models/Coach";
+import { IClient } from "../models/Client";
 import { IUser } from "../models/User";
 
 declare global {
@@ -8,6 +9,7 @@ declare global {
     }
     interface Locals {
       coach?: ICoach;
+      client?: IClient;
     }
   }
 }

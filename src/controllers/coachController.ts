@@ -92,13 +92,11 @@ export const getClientDetails = catchAsync(
 
     let program = await Program.findOne({
       clientId: client._id,
-      coachId: coach._id,
     });
 
     if (!program) {
       program = await Program.create({
         clientId: client._id,
-        coachId: coach._id,
       });
     }
 
@@ -260,10 +258,10 @@ export const updateProgramSessions = catchAsync(
 
     if (!client) throw new AppError("Client non trouvé ou accès refusé", 404);
 
-    let program = await Program.findOne({ clientId, coachId: coach._id });
+    let program = await Program.findOne({ clientId });
 
     if (!program) {
-      program = await Program.create({ clientId, coachId: coach._id });
+      program = await Program.create({ clientId });
     }
 
     const existingSessionIds = await Session.find({

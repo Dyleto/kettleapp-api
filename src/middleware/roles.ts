@@ -1,10 +1,11 @@
-import { Request, Response, NextFunction } from "express";
+﻿import { Request, Response, NextFunction } from "express";
 import User from "../models/User";
 import Coach from "../models/Coach";
+import Client from "../models/Client";
 import { AppError } from "../utils/AppError";
 import { catchAsync } from "../utils/catchAsync";
 
-// Vérifie si l'utilisateur est Admin
+// VÃ©rifie si l'utilisateur est Admin
 export const requireAdmin = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.session.userId;
@@ -12,26 +13,43 @@ export const requireAdmin = catchAsync(
     const user = await User.findById(userId);
 
     if (!user || !user.isAdmin) {
-      throw new AppError("Accès refusé : Administrateur requis", 403);
+      throw new AppError("AccÃ¨s refusÃ© : Administrateur requis", 403);
     }
 
     next();
   },
 );
 
-// Vérifie si l'utilisateur est Coach
+// VÃ©rifie si l'utilisateur est Coach
 export const requireCoach = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.session.userId;
 
-    // On cherche si un profil Coach est associé à cet User
+    // On cherche si un profil Coach est associÃ© Ã  cet User
     const coach = await Coach.findOne({ userId });
 
     if (!coach) {
-      throw new AppError("Accès refusé : Espace Coach uniquement", 403);
+      throw new AppError("AccÃ¨s refusÃ© : Espace Coach uniquement", 403);
     }
 
     res.locals.coach = coach;
+
+    next();
+  },
+);
+
+// Vérifie si l'utilisateur est Client
+export const requireClient = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.session.userId;
+
+    const client = await Client.findOne({ userId });
+
+    if (!client) {
+      throw new AppError("Accès refusé : Espace Client uniquement", 403);
+    }
+
+    res.locals.client = client;
 
     next();
   },
