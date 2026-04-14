@@ -34,6 +34,7 @@ export interface ICompletedSession extends Document {
     soreness: number;
   };
   clientNotes?: string;
+  viewedByCoach: boolean;
   completedAt: Date;
 }
 
@@ -85,6 +86,7 @@ const CompletedSessionSchema = new Schema(
       soreness: { type: Number, required: true, min: 1, max: 5 },
     },
     clientNotes: { type: String },
+    viewedByCoach: { type: Boolean, default: false },
     completedAt: { type: Date, default: Date.now },
   },
   { timestamps: true },

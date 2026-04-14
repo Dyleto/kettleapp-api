@@ -10,6 +10,7 @@ import { IUser } from "../models/User";
 import Program from "../models/Program";
 import Session from "../models/Session";
 import { isValidObjectId } from "mongoose";
+import CompletedSession from "../models/CompletedSession";
 
 // --------------------------------------------------------------------------
 // INVITATIONS
@@ -68,11 +69,22 @@ export const getClients = catchAsync(async (req: Request, res: Response) => {
     "coaches.coachId": coach._id,
   }).populate<{ userId: IUser }>("userId");
 
+  const clientIds = clients.map((c) => c._id);
+  const unseenCounts = await CompletedSession.aggregate([
+    { $match: { clientId: { $in: clientIds }, viewedByCoach: false } },
+    { $group: { _id: "$clientId", count: { $sum: 1 } } },
+  ]);
+
+  const unseenMap = Object.fromEntries(
+    unseenCounts.map((uc) => [uc._id.toString(), uc.count]),
+  );
+
   const formattedClients = clients.map((client) => ({
     _id: client._id,
     firstName: client.userId.firstName,
     lastName: client.userId.lastName,
     picture: client.userId.picture,
+    unseenCount: unseenMap[client._id.toString()] ?? 0,
   }));
 
   res.status(200).json(formattedClients);
@@ -105,6 +117,11 @@ export const getClientDetails = catchAsync(
       .populate("warmup.exercises.exerciseId")
       .populate("workout.exercises.exerciseId");
 
+    const unseenCount = await CompletedSession.countDocuments({
+      clientId: client._id,
+      viewedByCoach: false,
+    });
+
     res.status(200).json({
       _id: client._id,
       firstName: client.userId.firstName,
@@ -115,7 +132,47 @@ export const getClientDetails = catchAsync(
         ...program.toObject(),
         sessions,
       },
+      unseenCount,
     });
+  },
+);
+
+export const getClientHistory = catchAsync(
+  async (req: Request, res: Response) => {
+    const coach = res.locals.coach as ICoach;
+    const { id: clientId } = req.params;
+
+    const client = await Client.findOne({
+      _id: clientId,
+      "coaches.coachId": coach._id,
+    });
+    if (!client) throw new AppError("Client non trouvé", 404);
+
+    const history = await CompletedSession.find({ clientId }).sort({
+      completedAt: -1,
+    });
+
+    res.status(200).json(history);
+  },
+);
+
+export const markHistoryAsViewed = catchAsync(
+  async (req: Request, res: Response) => {
+    const coach = res.locals.coach as ICoach;
+    const { id: clientId } = req.params;
+
+    const client = await Client.findOne({
+      _id: clientId,
+      "coaches.coachId": coach._id,
+    });
+    if (!client) throw new AppError("Client non trouvé", 404);
+
+    await CompletedSession.updateMany(
+      { clientId, viewedByCoach: false },
+      { $set: { viewedByCoach: true } },
+    );
+
+    res.status(200).json({ status: "success" });
   },
 );
 

@@ -1,4 +1,4 @@
-import { model, Schema, Types, Document } from "mongoose";
+﻿import { model, Schema, Types, Document } from "mongoose";
 import { IUser } from "./User";
 
 export interface CoachLink {
@@ -7,6 +7,7 @@ export interface CoachLink {
 }
 
 export interface IClient extends Document {
+  _id: Types.ObjectId;
   userId: IUser | Types.ObjectId;
   coaches: CoachLink[];
   createdAt: Date;
@@ -30,13 +31,13 @@ const ClientSchema: Schema = new Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-// Index pour éviter les doublons de coaches
+// Index pour Ã©viter les doublons de coaches
 ClientSchema.index(
   { userId: 1, "coaches.coachId": 1 },
-  { unique: true, sparse: true }
+  { unique: true, sparse: true },
 );
 
 ClientSchema.index({ "coaches.coachId": 1 });

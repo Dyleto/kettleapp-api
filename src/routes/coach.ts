@@ -13,6 +13,11 @@ router.post("/generate-invitation", coachController.generateInvitation);
 // CLIENTS
 router.get("/clients", coachController.getClients);
 router.get("/clients/:id", coachController.getClientDetails);
+router.get("/clients/:id/history", coachController.getClientHistory);
+router.patch(
+  "/clients/:id/history/mark-viewed",
+  coachController.markHistoryAsViewed,
+);
 
 // PROGRAMMES & SESSIONS
 router.put(
