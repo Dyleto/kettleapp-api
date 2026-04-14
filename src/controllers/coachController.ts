@@ -71,7 +71,7 @@ export const getClients = catchAsync(async (req: Request, res: Response) => {
 
   const clientIds = clients.map((c) => c._id);
   const unseenCounts = await CompletedSession.aggregate([
-    { $match: { clientId: { $in: clientIds }, viewedByCoach: false } },
+    { $match: { clientId: { $in: clientIds }, viewedByCoach: { $ne: true } } },
     { $group: { _id: "$clientId", count: { $sum: 1 } } },
   ]);
 
@@ -119,7 +119,7 @@ export const getClientDetails = catchAsync(
 
     const unseenCount = await CompletedSession.countDocuments({
       clientId: client._id,
-      viewedByCoach: false,
+      viewedByCoach: { $ne: true },
     });
 
     res.status(200).json({
@@ -168,7 +168,7 @@ export const markHistoryAsViewed = catchAsync(
     if (!client) throw new AppError("Client non trouvé", 404);
 
     await CompletedSession.updateMany(
-      { clientId, viewedByCoach: false },
+      { clientId, viewedByCoach: { $ne: true } },
       { $set: { viewedByCoach: true } },
     );
 
