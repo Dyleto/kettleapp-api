@@ -463,18 +463,25 @@ export const updateProgramSessions = catchAsync(
               order: index + 1,
             };
 
-            if (
-              sessionData._id &&
-              isValidObjectId(sessionData._id) &&
-              existingIds.includes(sessionData._id)
-            ) {
-              return Session.findByIdAndUpdate(sessionData._id, payload, {
-                new: true,
-                session: dbSession,
-              });
-            } else {
-              return Session.create([payload], { session: dbSession });
+            // L'identifiant fourni par le client sert de clé, qu'il existe
+            // déjà ou non. C'est ce qui rend la requête répétable : envoyer
+            // deux fois le même programme donne le même résultat.
+            //
+            // Auparavant, une séance inconnue partait en création pure. Avec
+            // l'enregistrement automatique, deux envois successifs d'une
+            // séance qui vient d'être ajoutée — le second parti avant que le
+            // premier n'ait répondu — créaient donc deux séances. Le client
+            // génère maintenant un identifiant au format ObjectId dès la
+            // création, et c'est lui qu'on retrouve ici.
+            if (sessionData._id && isValidObjectId(sessionData._id)) {
+              return Session.findOneAndUpdate(
+                { _id: sessionData._id, programId: program._id },
+                payload,
+                { new: true, upsert: true, session: dbSession }
+              );
             }
+
+            return Session.create([payload], { session: dbSession });
           }
         );
 
