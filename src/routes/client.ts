@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { requireClient } from '../middleware/roles';
 import { validate } from '../middleware/validate';
 import {
@@ -29,5 +29,8 @@ router.patch(
 
 // HISTORIQUE
 router.get('/history', clientController.getHistory);
+
+// DONNÉES DE SANTÉ
+router.put('/health-consent', clientController.setHealthConsent);
 
 export default router;

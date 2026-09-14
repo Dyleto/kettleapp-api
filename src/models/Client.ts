@@ -1,4 +1,4 @@
-﻿import { model, Schema, Types, Document } from "mongoose";
+import { model, Schema, Types, Document } from "mongoose";
 import { IUser } from "./User";
 
 export interface CoachLink {
@@ -6,10 +6,24 @@ export interface CoachLink {
   linkedAt: Date;
 }
 
+/**
+ * La décision du client sur le partage de son ressenti.
+ *
+ * Absente tant qu'on ne la lui a pas demandée. `version` retient le texte
+ * auquel il a répondu : un texte remanié redemande la question plutôt que de
+ * faire passer un accord ancien pour un accord au nouveau.
+ */
+export interface HealthConsent {
+  granted: boolean;
+  decidedAt: Date;
+  version: string;
+}
+
 export interface IClient extends Document {
   _id: Types.ObjectId;
   userId: IUser | Types.ObjectId;
   coaches: CoachLink[];
+  healthConsent?: HealthConsent;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,6 +42,17 @@ const ClientSchema: Schema = new Schema(
         linkedAt: { type: Date, default: Date.now },
       },
     ],
+    healthConsent: {
+      type: new Schema<HealthConsent>(
+        {
+          granted: { type: Boolean, required: true },
+          decidedAt: { type: Date, required: true },
+          version: { type: String, required: true },
+        },
+        { _id: false },
+      ),
+      required: false,
+    },
   },
   {
     timestamps: true,
