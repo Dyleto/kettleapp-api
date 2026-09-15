@@ -12,6 +12,7 @@ import { catchAsync } from '../utils/catchAsync';
 import { AppError } from '../utils/AppError';
 import logger from '../utils/logger';
 import { getErrorMessage } from '../utils/errors';
+import { PORTE_DES_DONNEES_DE_SANTE } from './clientController';
 
 // GET /api/account
 //
@@ -30,7 +31,7 @@ export const getAccount = catchAsync(async (req: Request, res: Response) => {
 
   const asClient = client
     ? await (async () => {
-        const [coaches, completedCount] = await Promise.all([
+        const [coaches, completedCount, healthDataCount] = await Promise.all([
           Promise.all(
             client.coaches.map(async (lien) => {
               const c = await Coach.findById(lien.coachId).populate<{
@@ -46,11 +47,19 @@ export const getAccount = catchAsync(async (req: Request, res: Response) => {
             })
           ),
           CompletedSession.countDocuments({ clientId: client._id }),
+          // Combien de bilans un refus effacerait. Sert à n'avertir que
+          // lorsqu'il y a réellement quelque chose à perdre : prévenir un
+          // compte tout neuf qu'on va effacer ses données serait faux.
+          CompletedSession.countDocuments({
+            clientId: client._id,
+            ...PORTE_DES_DONNEES_DE_SANTE,
+          }),
         ]);
 
         return {
           coaches: coaches.filter((c) => c !== null),
           completedCount,
+          healthDataCount,
           healthConsent: client.healthConsent ?? null,
           since: client.createdAt,
         };

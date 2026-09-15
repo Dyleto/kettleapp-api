@@ -209,6 +209,23 @@ export const updateCompletedSession = catchAsync(
   }
 );
 
+/**
+ * Les bilans qui portent effectivement une donnée de santé.
+ *
+ * `feedback.tags.0` plutôt que `feedback.tags` : un tableau vide existe sans
+ * rien contenir, et le compter ferait annoncer au client qu'on va effacer des
+ * séances où il n'y a rien à effacer.
+ *
+ * La même condition sert à compter avant et à effacer ensuite — sans quoi
+ * l'avertissement pourrait annoncer un nombre que la purge ne tient pas.
+ */
+export const PORTE_DES_DONNEES_DE_SANTE = {
+  $or: [
+    { 'feedback.tags.0': { $exists: true } },
+    { clientNotes: { $exists: true, $ne: '' } },
+  ],
+};
+
 // PUT /api/client/health-consent
 //
 // Le client décide de partager ou non son ressenti. Les deux réponses sont
@@ -237,13 +254,7 @@ export const setHealthConsent = catchAsync(
     let efface = 0;
     if (!granted) {
       const { modifiedCount } = await CompletedSession.updateMany(
-        {
-          clientId: client._id,
-          $or: [
-            { 'feedback.tags': { $exists: true } },
-            { clientNotes: { $exists: true, $ne: '' } },
-          ],
-        },
+        { clientId: client._id, ...PORTE_DES_DONNEES_DE_SANTE },
         { $unset: { 'feedback.tags': '', clientNotes: '' } }
       );
       efface = modifiedCount;
