@@ -30,6 +30,8 @@ export interface IBlockExerciseSnapshot {
   reps?: number;
   duration?: number;
   customMetric?: { value: number; unit: string };
+  /** La consigne du coach pour cet exercice, telle qu'elle était ce jour-là. */
+  note?: string;
   performed?: IPerformed;
 }
 
@@ -105,6 +107,7 @@ const exerciseSnapshotSchema = new Schema(
       value: { type: Number },
       unit: { type: String },
     },
+    note: { type: String },
     performed: { type: performedSchema, default: undefined },
   },
   { _id: false }

@@ -26,6 +26,16 @@ export interface IBlockExercise {
   reps?: number;
   duration?: number;
   customMetric?: { value: number; unit: string };
+  /**
+   * La consigne du coach pour cet exercice, dans cette séance-là.
+   *
+   * À ne pas confondre avec `Exercise.description`, qui décrit le mouvement
+   * en général et vit dans la bibliothèque : celle-ci est partagée par tous
+   * les clients et toutes les séances. Un coach qui écrivait « attention à
+   * ton épaule droite » l'écrivait donc sur la fiche commune, et tous ses
+   * clients la lisaient.
+   */
+  note?: string;
 }
 
 export interface ISessionBlock {
@@ -72,6 +82,7 @@ const blockExerciseSchema = new Schema(
       value: { type: Number },
       unit: { type: String, trim: true },
     },
+    note: { type: String, trim: true },
   },
   { _id: false },
 );

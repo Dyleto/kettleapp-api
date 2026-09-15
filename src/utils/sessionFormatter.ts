@@ -9,6 +9,8 @@ type PopulatedBlockExercise = {
   reps?: number;
   duration?: number;
   customMetric?: { value: number; unit: string };
+  /** La consigne du coach pour cette pose de l'exercice, dans cette séance. */
+  note?: string;
 };
 
 type PopulatedBlock = Omit<ISessionBlock, 'exercises'> & {

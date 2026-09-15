@@ -14,6 +14,9 @@ const blockExerciseSchema = z.object({
       unit: z.string().min(1).max(20),
     })
     .optional(),
+  // La consigne propre à cette pose de l'exercice. Plus courte que celle du
+  // bloc : c'est un rappel — « épaule droite » — pas un paragraphe.
+  note: z.string().max(500).optional(),
 });
 
 const sessionBlockSchema = z.object({
