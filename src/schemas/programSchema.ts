@@ -57,3 +57,17 @@ export const updateProgramSessionsSchema = z.object({
     sessions: z.array(sessionInputSchema).max(30),
   }),
 });
+
+/**
+ * Copier une séance chez un autre client.
+ *
+ * Rien du contenu ne transite : seulement de quoi désigner la séance source.
+ * Le serveur la relit dans la base, ce qui évite qu'un appel forgé n'écrive
+ * un programme qu'il n'aurait pas le droit de lire.
+ */
+export const copySessionSchema = z.object({
+  body: z.object({
+    sourceClientId: z.string().min(1),
+    sourceSessionId: z.string().min(1),
+  }),
+});

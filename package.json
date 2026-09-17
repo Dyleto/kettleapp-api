@@ -9,7 +9,8 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",
-    "seed:exercises": "ts-node src/scripts/seedExercises.ts"
+    "seed:exercises": "ts-node src/scripts/seedExercises.ts",
+    "verify:copy": "ts-node src/scripts/verifyCopySession.ts"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
@@ -42,6 +43,7 @@
     "@eslint/js": "^10.0.1",
     "eslint": "^10.5.0",
     "eslint-config-prettier": "^10.1.8",
+    "mongodb-memory-server": "^11.2.0",
     "nodemon": "^3.1.0",
     "prettier": "^3.8.4",
     "ts-node": "^10.9.2",

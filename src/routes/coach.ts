@@ -6,7 +6,10 @@ import {
   createExerciseSchema,
   updateExerciseSchema,
 } from '../schemas/exerciseSchema';
-import { updateProgramSessionsSchema } from '../schemas/programSchema';
+import {
+  copySessionSchema,
+  updateProgramSessionsSchema,
+} from '../schemas/programSchema';
 
 const router = Router();
 
@@ -31,6 +34,12 @@ router.put(
   '/clients/:clientId/program/sessions',
   validate(updateProgramSessionsSchema),
   coachController.updateProgramSessions
+);
+// Le client de l'URL est la destination : on copie VERS lui.
+router.post(
+  '/clients/:clientId/program/sessions/copy',
+  validate(copySessionSchema),
+  coachController.copySessionToClient
 );
 
 // EXERCICES

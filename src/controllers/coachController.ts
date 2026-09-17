@@ -518,3 +518,93 @@ export const updateProgramSessions = catchAsync(
     res.status(200).json(formatted);
   }
 );
+
+/**
+ * Copier une séance chez un autre client.
+ *
+ * Retour du terrain : « dommage de ne pas pouvoir copier la séance et la
+ * coller chez un autre client. Ce serait plus utile que le dupliquer. »
+ * Il a raison : un coach écrit rarement deux fois le même travail, mais il
+ * l'adapte souvent d'une personne à l'autre.
+ *
+ * Deux autorisations, pas une. Vérifier le client de destination ne suffit
+ * pas : sans le contrôle sur la source, connaître un identifiant de séance
+ * suffirait à recopier — donc à lire — le programme d'un client qui n'est
+ * pas le sien.
+ *
+ * Ce qui ne se copie pas : les jours conseillés. Le contenu d'une séance
+ * appartient à l'entraînement, ses jours appartiennent à la semaine de
+ * quelqu'un. Les emporter poserait chez le nouveau client un conseil qui
+ * n'a jamais été pensé pour lui.
+ */
+export const copySessionToClient = catchAsync(
+  async (req: Request, res: Response) => {
+    const coach = res.locals.coach as ICoach;
+    const targetClientId = req.params.clientId as string;
+    const { sourceClientId, sourceSessionId } = req.body as {
+      sourceClientId: string;
+      sourceSessionId: string;
+    };
+    const rid = req.requestId ?? '?';
+
+    logger.info(`[${rid}] copySessionToClient: start`, {
+      coachId: coach._id,
+      sourceClientId,
+      sourceSessionId,
+      targetClientId,
+    });
+
+    const source = await getAuthorizedClient(coach._id, sourceClientId);
+    const target = await getAuthorizedClient(coach._id, targetClientId);
+
+    const sourceProgram = await getOrCreate(source._id);
+    const seance = await Session.findOne({
+      _id: sourceSessionId,
+      programId: sourceProgram._id,
+    }).lean();
+
+    if (!seance) {
+      throw new AppError('Séance introuvable', 404);
+    }
+
+    const targetProgram = await getOrCreate(target._id);
+    const dejaLa = await Session.countDocuments({
+      programId: targetProgram._id,
+    });
+
+    // Les identifiants ne voyagent pas : ce sont deux séances distinctes, et
+    // corriger l'une ne doit jamais toucher l'autre.
+    const sansId = <T extends object>(objet: T): T => {
+      const copie = { ...objet } as Record<string, unknown>;
+      delete copie._id;
+      return copie as T;
+    };
+
+    const blocks = (seance.blocks ?? []).map((block) => ({
+      ...sansId(block),
+      exercises: (block.exercises ?? []).map(sansId),
+    }));
+
+    const copie = await Session.create({
+      programId: targetProgram._id,
+      order: dejaLa + 1,
+      notes: seance.notes,
+      blocks,
+    });
+
+    const peuplee = await Session.findById(copie._id)
+      .populate('blocks.exercises.exerciseId')
+      .lean();
+
+    logger.info(`[${rid}] copySessionToClient: success`, {
+      coachId: coach._id,
+      targetClientId,
+      newSessionId: copie._id,
+      order: copie.order,
+    });
+
+    res
+      .status(201)
+      .json(formatSession(peuplee as unknown as PopulatedSession));
+  }
+);
