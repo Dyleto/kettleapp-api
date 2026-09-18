@@ -56,6 +56,16 @@ export interface ISessionBlock {
 export interface ISession extends Document {
   programId: Types.ObjectId;
   order: number;
+  /**
+   * Le nom libre que le coach donne à la séance — « Full body A », « Haut du
+   * corps ». Facultatif : sans lui, la séance s'appelle par son rang.
+   *
+   * Une séance se répète, et son rang se répétait avec elle : un client
+   * lisait « Séance 1 · Séance 1 · Séance 1 » dans son historique, et le
+   * coach la même chose dans le journal. Le rang dit où elle est dans le
+   * programme, pas ce qu'elle contient.
+   */
+  name?: string;
   notes?: string;
   /**
    * Jours de la semaine où le coach conseille cette séance, lundi = 0.
@@ -109,6 +119,7 @@ const SessionSchema = new Schema(
   {
     programId: { type: Schema.Types.ObjectId, ref: "Program", required: true },
     order: { type: Number, required: true },
+    name: { type: String, trim: true },
     notes: { type: String },
     suggestedDays: [{ type: Number, min: 0, max: 6 }],
     blocks: [sessionBlockSchema],

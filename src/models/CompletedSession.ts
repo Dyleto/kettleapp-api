@@ -61,6 +61,14 @@ export interface ICompletedSession extends Document {
   programId: Types.ObjectId;
   originalSessionId: Types.ObjectId;
   sessionOrder: number;
+  /**
+   * Le nom que la séance portait le jour où elle a été faite.
+   *
+   * Figé, comme le rang et comme les blocs : renommer « Full body A » en
+   * « Full body B » ne doit pas réécrire les bilans déjà enregistrés. Absent
+   * pour tout ce qui a été fait avant que les séances aient un nom.
+   */
+  sessionName?: string;
   blocks: IBlockSnapshot[];
   coachNotes?: string;
   feedback?: IFeedback;
@@ -150,6 +158,7 @@ const CompletedSessionSchema = new Schema(
       required: true,
     },
     sessionOrder: { type: Number, required: true },
+    sessionName: { type: String, trim: true },
     blocks: [blockSnapshotSchema],
     coachNotes: { type: String },
     feedback: { type: feedbackSchema, default: undefined },

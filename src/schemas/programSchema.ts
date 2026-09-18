@@ -38,6 +38,9 @@ const sessionBlockSchema = z.object({
 const sessionInputSchema = z.object({
   _id: z.string().optional(),
   order: z.number().int().min(1),
+  // Le nom libre de la séance. Court par nature — « Full body A », pas une
+  // phrase : c'est un titre de rail et de carte, lu à côté de son rang.
+  name: z.string().max(60).optional(),
   notes: z.string().max(1000).optional(),
   // Lundi = 0. On dédoublonne et on trie ici plutôt qu'à l'affichage : la
   // liste est lue par deux clients (l'atelier du coach, la semaine du client)

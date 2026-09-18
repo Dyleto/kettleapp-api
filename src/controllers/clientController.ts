@@ -124,6 +124,7 @@ export const completeSession = catchAsync(
       programId: program._id,
       originalSessionId: session._id,
       sessionOrder: session.order,
+      sessionName: session.name,
       blocks,
       coachNotes: session.notes,
       ...(feedback ? { feedback: filtrerRessenti(feedback, client) } : {}),

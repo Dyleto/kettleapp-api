@@ -20,6 +20,8 @@ type PopulatedBlock = Omit<ISessionBlock, 'exercises'> & {
 type PopulatedSession = {
   _id: unknown;
   order: number;
+  /** Le nom libre du coach, quand il en a donné un. */
+  name?: string;
   notes?: string;
   blocks: PopulatedBlock[];
   createdAt: Date;

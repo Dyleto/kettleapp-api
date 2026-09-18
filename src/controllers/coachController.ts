@@ -404,6 +404,7 @@ export const updateProgramSessions = catchAsync(
 
     type SessionInput = {
       _id?: string;
+      name?: string;
       notes?: string;
       suggestedDays?: number[];
       blocks?: unknown;
@@ -453,6 +454,10 @@ export const updateProgramSessions = catchAsync(
         const operations = (sessions as SessionInput[]).map(
           (sessionData, index) => {
             const payload = {
+              // `?? ''` et non `?? undefined` : Mongoose ignore les champs
+              // absents lors d'un update, et un coach qui efface le nom d'une
+              // séance ne pourrait plus jamais le retirer.
+              name: sessionData.name ?? '',
               notes: sessionData.notes,
               // `?? []` et non `?? undefined` : Mongoose ignore les champs
               // undefined lors d'un update, et le coach qui décoche tous les
@@ -588,6 +593,9 @@ export const copySessionToClient = catchAsync(
     const copie = await Session.create({
       programId: targetProgram._id,
       order: dejaLa + 1,
+      // Le nom suit la copie — contrairement aux jours conseillés : « Full
+      // body A » décrit ce que la séance fait, pas la semaine de quelqu'un.
+      name: seance.name,
       notes: seance.notes,
       blocks,
     });
