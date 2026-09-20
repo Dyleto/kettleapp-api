@@ -9,7 +9,10 @@ import { getOrCreate } from '../services/programService';
 import logger from '../utils/logger';
 import { formatSession, PopulatedSession } from '../utils/sessionFormatter';
 import { HEALTH_CONSENT_VERSION } from '../constants/consent';
-import { applyPerformed } from '../services/completedSessionService';
+import {
+  applyPerformed,
+  applyRoundsDone,
+} from '../services/completedSessionService';
 import { isValidObjectId } from 'mongoose';
 
 // GET /api/client/program
@@ -82,7 +85,14 @@ export const completeSession = catchAsync(
   async (req: Request, res: Response) => {
     const client = res.locals.client as IClient;
     const { sessionId } = req.params;
-    const { feedback, metrics, performed, clientNotes, completedAt } = req.body;
+    const {
+      feedback,
+      metrics,
+      performed,
+      roundsDone,
+      clientNotes,
+      completedAt,
+    } = req.body;
     const rid = req.requestId ?? '?';
 
     logger.info(`[${rid}] completeSession: start`, {
@@ -117,7 +127,12 @@ export const completeSession = catchAsync(
     // La prescription est recalculée ici, côté serveur, à partir de la séance
     // du coach. Le client n'y touche pas : il n'ajoute que ce qu'il a fait.
     const formatted = formatSession(session as unknown as PopulatedSession);
-    const blocks = applyPerformed(formatted.blocks, performed);
+    // Deux passes, deux portées : le réalisé des séries appartient aux
+    // exercices, le nombre de tours bouclés appartient au bloc.
+    const blocks = applyRoundsDone(
+      applyPerformed(formatted.blocks, performed),
+      roundsDone
+    );
 
     const completed = await CompletedSession.create({
       clientId: client._id,
@@ -164,7 +179,8 @@ export const updateCompletedSession = catchAsync(
   async (req: Request, res: Response) => {
     const client = res.locals.client as IClient;
     const { id } = req.params;
-    const { feedback, performed, clientNotes, completedAt } = req.body;
+    const { feedback, performed, roundsDone, clientNotes, completedAt } =
+      req.body;
     const rid = req.requestId ?? '?';
 
     if (!isValidObjectId(id)) throw new AppError('Bilan introuvable', 404);
@@ -189,10 +205,13 @@ export const updateCompletedSession = catchAsync(
     if (completedAt !== undefined)
       completed.completedAt = new Date(completedAt);
 
-    if (performed !== undefined) {
-      // On repart du snapshot stocké et on ne réécrit que `performed` :
+    if (performed !== undefined || roundsDone !== undefined) {
+      // On repart du snapshot stocké et on ne réécrit que le réalisé :
       // la prescription enregistrée le jour de la séance reste intacte.
-      const blocks = applyPerformed(completed.toObject().blocks, performed);
+      const blocks = applyRoundsDone(
+        applyPerformed(completed.toObject().blocks, performed),
+        roundsDone
+      );
       completed.set('blocks', blocks);
     }
 

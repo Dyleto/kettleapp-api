@@ -10,7 +10,8 @@
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",
     "seed:exercises": "ts-node src/scripts/seedExercises.ts",
-    "verify:copy": "ts-node src/scripts/verifyCopySession.ts"
+    "verify:copy": "ts-node src/scripts/verifyCopySession.ts",
+    "verify:rounds": "ts-node src/scripts/verifyRoundsDone.ts"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",

@@ -8,6 +8,12 @@ export type PerformedInput = {
   sets: IPerformedSet[];
 };
 
+// Ce que le client envoie pour un bloc qui se compte en tours.
+export type RoundsInput = {
+  blockOrder: number;
+  rounds: number;
+};
+
 type ExerciseLike = { order: number; performed?: IPerformed };
 type BlockLike = { order: number; exercises: ExerciseLike[] };
 
@@ -68,4 +74,29 @@ export const applyPerformed = <B extends BlockLike>(
       return { ...exercise, performed: normalize(entry.sets) };
     }),
   }));
+};
+
+/**
+ * Recopie le nombre de tours réellement bouclés dans le snapshot.
+ *
+ * Ne touche QUE `blocks[].performedRounds`, pour la même raison
+ * qu'`applyPerformed` ne touche que le réalisé des exercices : la
+ * prescription du coach appartient au serveur, le client ne la réécrit pas.
+ *
+ * Zéro est une réponse, pas une absence : un client qui n'a bouclé aucun tour
+ * l'a vécu, et l'effacer reviendrait à dire qu'il n'a pas fait le bloc.
+ */
+export const applyRoundsDone = <B extends { order: number }>(
+  blocks: B[],
+  entries?: RoundsInput[]
+): (B & { performedRounds?: number })[] => {
+  if (!entries || entries.length === 0) return blocks;
+
+  const parBloc = new Map<number, number>();
+  entries.forEach((e) => parBloc.set(e.blockOrder, e.rounds));
+
+  return blocks.map((block) => {
+    const tours = parBloc.get(block.order);
+    return tours === undefined ? block : { ...block, performedRounds: tours };
+  });
 };

@@ -36,6 +36,18 @@ const performedEntrySchema = z.object({
 
 const performedSchema = z.array(performedEntrySchema).max(500);
 
+// Les tours bouclés d'un bloc qui se compte en tours — le score d'un AMRAP.
+// Borné haut : personne ne boucle mille tours, et un nombre absurde en base
+// fausserait toute comparaison avec les séances précédentes.
+const roundsDoneSchema = z
+  .array(
+    z.object({
+      blockOrder: z.number().int().min(0),
+      rounds: z.number().int().min(0).max(999),
+    })
+  )
+  .max(50);
+
 const pastDate = z.coerce.date().refine((date) => date <= new Date(), {
   message: 'La date de complétion ne peut pas être dans le futur',
 });
@@ -49,6 +61,7 @@ export const completeSessionSchema = z.object({
       feedback: feedbackSchema.optional(),
       metrics: metricsSchema.optional(),
       performed: performedSchema.optional(),
+      roundsDone: roundsDoneSchema.optional(),
       clientNotes: z.string().max(5000).optional(),
       completedAt: pastDate.optional(),
     })
@@ -69,6 +82,7 @@ export const updateCompletedSessionSchema = z.object({
     .object({
       feedback: feedbackSchema.optional(),
       performed: performedSchema.optional(),
+      roundsDone: roundsDoneSchema.optional(),
       clientNotes: z.string().max(5000).optional(),
       completedAt: pastDate.optional(),
     })

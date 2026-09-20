@@ -42,7 +42,18 @@ export interface IBlockSnapshot {
   notes?: string;
   durationMinutes?: number;
   intervalMinutes?: number;
+  /** Les tours prescrits par le coach. */
   rounds?: number;
+  /**
+   * Les tours réellement bouclés, quand le format se compte en tours.
+   *
+   * Sur un AMRAP, c'est le score de la séance — la donnée que le client
+   * notait sur un cahier et que le coach réclamait en prose faute de champ
+   * pour la recevoir (« Rythme régulier, viser 5-6 tours »). Distinct de
+   * `rounds`, qui reste ce qui était demandé : comparer les deux est tout
+   * l'intérêt.
+   */
+  performedRounds?: number;
   restBetweenRounds?: number;
   workDuration?: number;
   restDuration?: number;
@@ -130,6 +141,7 @@ const blockSnapshotSchema = new Schema(
     durationMinutes: { type: Number },
     intervalMinutes: { type: Number },
     rounds: { type: Number },
+    performedRounds: { type: Number },
     restBetweenRounds: { type: Number },
     workDuration: { type: Number },
     restDuration: { type: Number },
