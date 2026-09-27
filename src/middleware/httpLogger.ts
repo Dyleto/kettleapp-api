@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
-import { randomUUID } from "crypto";
-import logger from "../utils/logger";
+import { Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'crypto';
+import logger from '../utils/logger';
 
 /**
  * Middleware HTTP : log chaque requête avec un request-id unique.
@@ -11,12 +11,12 @@ export const httpLogger = (req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
 
   // On stocke le requestId dans req pour que les controllers puissent l'utiliser
-  (req as any).requestId = requestId;
+  req.requestId = requestId;
 
-  res.on("finish", () => {
+  res.on('finish', () => {
     const duration = Date.now() - start;
-    const userId = req.session?.userId ?? "anonymous";
-    const ip = req.ip ?? req.socket?.remoteAddress ?? "unknown";
+    const userId = req.session?.userId ?? 'anonymous';
+    const ip = req.ip ?? req.socket?.remoteAddress ?? 'unknown';
 
     const meta = {
       requestId,

@@ -1,6 +1,6 @@
-import winston from "winston";
+import winston from 'winston';
 
-const isDev = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === 'development';
 
 const levels = {
   error: 0,
@@ -11,11 +11,11 @@ const levels = {
 };
 
 const colors = {
-  error: "red",
-  warn: "yellow",
-  info: "green",
-  http: "magenta",
-  debug: "white",
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'white',
 };
 
 winston.addColors(colors);
@@ -25,26 +25,24 @@ winston.addColors(colors);
  * En production     : JSON structuré (une ligne par log, facile à parser/grep)
  */
 const devFormat = winston.format.combine(
-  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
   winston.format.printf(({ timestamp, level, message, ...meta }) => {
-    const metaStr = Object.keys(meta).length
-      ? " " + JSON.stringify(meta)
-      : "";
+    const metaStr = Object.keys(meta).length ? ' ' + JSON.stringify(meta) : '';
     return `${timestamp} ${level}: ${message}${metaStr}`;
-  }),
+  })
 );
 
 const prodFormat = winston.format.combine(
   winston.format.timestamp(),
   winston.format.errors({ stack: true }),
-  winston.format.json(),
+  winston.format.json()
 );
 
 const logger = winston.createLogger({
   // En prod on veut "info" et plus : ça couvre les logs opérationnels importants
   // sans être aussi bavard que debug.
-  level: isDev ? "debug" : "info",
+  level: isDev ? 'debug' : 'info',
   levels,
   format: isDev ? devFormat : prodFormat,
   transports: [new winston.transports.Console()],

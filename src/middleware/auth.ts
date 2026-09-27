@@ -1,13 +1,13 @@
-import { Request, Response, NextFunction } from "express";
-import logger from "../utils/logger";
+import { Request, Response, NextFunction } from 'express';
+import logger from '../utils/logger';
 
 export const authMiddleware = (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   const userId = req.session.userId;
-  const rid = (req as any).requestId ?? "?";
+  const rid = req.requestId ?? '?';
 
   if (!userId) {
     logger.warn(`[${rid}] authMiddleware: no session`, {
@@ -15,7 +15,7 @@ export const authMiddleware = (
       url: req.originalUrl,
       ip: req.ip,
     });
-    return res.status(401).json({ message: "Accès non autorisé" });
+    return res.status(401).json({ message: 'Accès non autorisé' });
   }
 
   next();

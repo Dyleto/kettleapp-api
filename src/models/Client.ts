@@ -1,5 +1,5 @@
-import { model, Schema, Types, Document } from "mongoose";
-import { IUser } from "./User";
+import { model, Schema, Types, Document } from 'mongoose';
+import { IUser } from './User';
 
 export interface CoachLink {
   coachId: Types.ObjectId;
@@ -32,13 +32,13 @@ const ClientSchema: Schema = new Schema(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
       unique: true,
     },
     coaches: [
       {
-        coachId: { type: Schema.Types.ObjectId, ref: "Coach", required: true },
+        coachId: { type: Schema.Types.ObjectId, ref: 'Coach', required: true },
         linkedAt: { type: Date, default: Date.now },
       },
     ],
@@ -49,24 +49,24 @@ const ClientSchema: Schema = new Schema(
           decidedAt: { type: Date, required: true },
           version: { type: String, required: true },
         },
-        { _id: false },
+        { _id: false }
       ),
       required: false,
     },
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 // Index pour Ã©viter les doublons de coaches
 ClientSchema.index(
-  { userId: 1, "coaches.coachId": 1 },
-  { unique: true, sparse: true },
+  { userId: 1, 'coaches.coachId': 1 },
+  { unique: true, sparse: true }
 );
 
-ClientSchema.index({ "coaches.coachId": 1 });
+ClientSchema.index({ 'coaches.coachId': 1 });
 
-const Client = model<IClient>("Client", ClientSchema);
+const Client = model<IClient>('Client', ClientSchema);
 
 export default Client;

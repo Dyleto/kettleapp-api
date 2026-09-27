@@ -1,5 +1,5 @@
-import { model, Schema, Types, Document } from "mongoose";
-import { randomBytes } from "crypto";
+import { model, Schema, Types, Document } from 'mongoose';
+import { randomBytes } from 'crypto';
 
 export interface IInvitationToken extends Document {
   coachId: Types.ObjectId;
@@ -11,14 +11,14 @@ export interface IInvitationToken extends Document {
 const InvitationTokenSchema: Schema = new Schema({
   coachId: {
     type: Schema.Types.ObjectId,
-    ref: "Coach",
+    ref: 'Coach',
     required: true,
   },
   token: {
     type: String,
     required: true,
     unique: true,
-    default: () => randomBytes(32).toString("hex"),
+    default: () => randomBytes(32).toString('hex'),
   },
   expiresAt: {
     type: Date,
@@ -30,7 +30,7 @@ const InvitationTokenSchema: Schema = new Schema({
 InvitationTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const InvitationToken = model<IInvitationToken>(
-  "InvitationToken",
+  'InvitationToken',
   InvitationTokenSchema
 );
 

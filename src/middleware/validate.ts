@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from "express";
-import { ZodType, ZodError } from "zod";
+import { Request, Response, NextFunction } from 'express';
+import { ZodType, ZodError } from 'zod';
 
 export const validate =
   (schema: ZodType) =>
@@ -14,9 +14,9 @@ export const validate =
     } catch (error) {
       if (error instanceof ZodError) {
         return res.status(400).json({
-          status: "fail",
+          status: 'fail',
           errors: error.issues.map((issue) => ({
-            field: issue.path[1] ? String(issue.path[1]) : issue.path.join("."),
+            field: issue.path[1] ? String(issue.path[1]) : issue.path.join('.'),
             message: issue.message,
           })),
         });

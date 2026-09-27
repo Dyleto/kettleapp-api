@@ -1,4 +1,4 @@
-import { Document, model, Schema, Types } from "mongoose";
+import { Document, model, Schema, Types } from 'mongoose';
 
 export interface IExercise extends Document {
   name: string;
@@ -20,17 +20,17 @@ const ExerciseSchema = new Schema(
           if (!v) return true;
           return /^https?:\/\/.+/.test(v);
         },
-        message: "URL de vidéo invalide",
+        message: 'URL de vidéo invalide',
       },
     },
-    createdBy: { type: Schema.Types.ObjectId, ref: "Coach", required: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'Coach', required: true },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 ExerciseSchema.index({ createdBy: 1 });
 ExerciseSchema.index({ createdBy: 1, name: 1 });
 
-const Exercise = model<IExercise>("Exercise", ExerciseSchema);
+const Exercise = model<IExercise>('Exercise', ExerciseSchema);
 
 export default Exercise;

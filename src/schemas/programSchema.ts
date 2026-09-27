@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { BLOCK_TYPES } from "../models/Session";
+import { z } from 'zod';
+import { BLOCK_TYPES } from '../models/Session';
 
 const blockExerciseSchema = z.object({
   exerciseId: z.string().min(1),
@@ -50,7 +50,7 @@ const sessionInputSchema = z.object({
     .max(7)
     .optional()
     .transform((days) =>
-      days === undefined ? undefined : [...new Set(days)].sort((a, b) => a - b),
+      days === undefined ? undefined : [...new Set(days)].sort((a, b) => a - b)
     ),
   blocks: z.array(sessionBlockSchema).max(20),
 });

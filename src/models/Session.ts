@@ -1,21 +1,30 @@
-import { model, Schema, Types, Document } from "mongoose";
+import { model, Schema, Types, Document } from 'mongoose';
 
 export type BlockType =
-  | "warmup"
-  | "emom"
-  | "every"
-  | "amrap"
-  | "timecap"
-  | "chipper"
-  | "classic"
-  | "tabata"
-  | "onoff"
-  | "pyramid"
-  | "ladder";
+  | 'warmup'
+  | 'emom'
+  | 'every'
+  | 'amrap'
+  | 'timecap'
+  | 'chipper'
+  | 'classic'
+  | 'tabata'
+  | 'onoff'
+  | 'pyramid'
+  | 'ladder';
 
 export const BLOCK_TYPES: BlockType[] = [
-  "warmup", "emom", "every", "amrap", "timecap",
-  "chipper", "classic", "tabata", "onoff", "pyramid", "ladder",
+  'warmup',
+  'emom',
+  'every',
+  'amrap',
+  'timecap',
+  'chipper',
+  'classic',
+  'tabata',
+  'onoff',
+  'pyramid',
+  'ladder',
 ];
 
 export interface IBlockExercise {
@@ -82,7 +91,11 @@ export interface ISession extends Document {
 
 const blockExerciseSchema = new Schema(
   {
-    exerciseId: { type: Schema.Types.ObjectId, ref: "Exercise", required: true },
+    exerciseId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Exercise',
+      required: true,
+    },
     order: { type: Number, required: true },
     sets: { type: Number, min: 1 },
     restBetweenSets: { type: Number, min: 0 },
@@ -94,7 +107,7 @@ const blockExerciseSchema = new Schema(
     },
     note: { type: String, trim: true },
   },
-  { _id: false },
+  { _id: false }
 );
 
 const sessionBlockSchema = new Schema(
@@ -112,23 +125,23 @@ const sessionBlockSchema = new Schema(
     repsScheme: [{ type: Number, min: 1 }],
     exercises: [blockExerciseSchema],
   },
-  { _id: true },
+  { _id: true }
 );
 
 const SessionSchema = new Schema(
   {
-    programId: { type: Schema.Types.ObjectId, ref: "Program", required: true },
+    programId: { type: Schema.Types.ObjectId, ref: 'Program', required: true },
     order: { type: Number, required: true },
     name: { type: String, trim: true },
     notes: { type: String },
     suggestedDays: [{ type: Number, min: 0, max: 6 }],
     blocks: [sessionBlockSchema],
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 SessionSchema.index({ programId: 1, order: 1 });
 
-const Session = model<ISession>("Session", SessionSchema);
+const Session = model<ISession>('Session', SessionSchema);
 
 export default Session;

@@ -1,7 +1,7 @@
-import User, { IUser } from "../models/User";
-import Coach from "../models/Coach";
-import Client from "../models/Client";
-import { HEALTH_CONSENT_VERSION } from "../constants/consent";
+import User, { IUser } from '../models/User';
+import Coach from '../models/Coach';
+import Client from '../models/Client';
+import { HEALTH_CONSENT_VERSION } from '../constants/consent';
 
 export const createUserService = async (data: IUser): Promise<IUser> => {
   const newUser = new User(data);
@@ -39,7 +39,6 @@ export const buildUser = async (user: IUser) => {
     // La question se repose si elle n'a jamais été posée, ou si le texte a
     // changé depuis la réponse. Le calcul reste ici : le front ne connaît pas
     // la version courante et n'a pas à la connaître.
-    needsHealthConsent:
-      !!client && consent?.version !== HEALTH_CONSENT_VERSION,
+    needsHealthConsent: !!client && consent?.version !== HEALTH_CONSENT_VERSION,
   };
 };

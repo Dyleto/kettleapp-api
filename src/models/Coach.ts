@@ -1,5 +1,5 @@
-import { model, Schema, Types, Document } from "mongoose";
-import { IUser } from "./User";
+import { model, Schema, Types, Document } from 'mongoose';
+import { IUser } from './User';
 
 export interface ICoach extends Document {
   _id: Types.ObjectId;
@@ -12,14 +12,14 @@ const CoachSchema: Schema = new Schema(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
       unique: true,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-const Coach = model<ICoach>("Coach", CoachSchema);
+const Coach = model<ICoach>('Coach', CoachSchema);
 
 export default Coach;

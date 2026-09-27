@@ -1,6 +1,6 @@
-import { Request, Response } from "express";
-import { createUserService, getUsersService } from "../services/userService";
-import { catchAsync } from "../utils/catchAsync";
+import { Request, Response } from 'express';
+import { createUserService, getUsersService } from '../services/userService';
+import { catchAsync } from '../utils/catchAsync';
 
 export const getUsers = catchAsync(async (_req: Request, res: Response) => {
   const users = await getUsersService();

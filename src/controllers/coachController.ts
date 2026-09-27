@@ -611,8 +611,6 @@ export const copySessionToClient = catchAsync(
       order: copie.order,
     });
 
-    res
-      .status(201)
-      .json(formatSession(peuplee as unknown as PopulatedSession));
+    res.status(201).json(formatSession(peuplee as unknown as PopulatedSession));
   }
 );
