@@ -48,6 +48,10 @@ jobs:
       # content type every error comes back with.
       - run: npm run verify:errors
 
+      # The two ceilings the API enforces: whose quota a request counts
+      # against, and how large a body may be. Both were defaults nobody chose.
+      - run: npm run verify:hardening
+
       # `verify:copy` and `verify:rounds` need mongodb-memory-server, which
       # downloads a MongoDB binary on first run. Deliberately not wired here
       # yet: they have never been run at all — this container's network

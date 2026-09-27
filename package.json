@@ -14,7 +14,8 @@
     "verify:rounds": "ts-node src/scripts/verifyRoundsDone.ts",
     "verify:errors": "ts-node src/scripts/verifyErrorHandler.ts",
     "typecheck": "tsc --noEmit",
-    "format:check": "prettier --check src"
+    "format:check": "prettier --check src",
+    "verify:hardening": "ts-node src/scripts/verifyHardening.ts"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",

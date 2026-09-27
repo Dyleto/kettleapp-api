@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { validate } from '../middleware/validate';
+import { authLimiter } from '../middleware/rateLimits';
 import { googleAuthSchema } from '../schemas/authSchema';
-import rateLimit from 'express-rate-limit';
 import {
   googleAuthCallback,
   googleOneTapCallback,
@@ -12,12 +12,6 @@ import {
 } from '../controllers/authController';
 
 const router = Router();
-
-const authLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 10,
-  message: 'Trop de tentatives de connexion.',
-});
 
 router.post(
   '/google-callback',

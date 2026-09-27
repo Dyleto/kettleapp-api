@@ -8,10 +8,13 @@ import session from 'express-session';
 import authRoutes from './routes/auth';
 import MongoStore from 'connect-mongo';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import { globalLimiter } from './middleware/rateLimits';
 import { globalErrorHandler } from './middleware/errorHandler';
 import { httpLogger } from './middleware/httpLogger';
 import mongoSanitize from 'express-mongo-sanitize';
+import mongoose from 'mongoose';
+import logger from './utils/logger';
+import { errorMessage } from './utils/unknownError';
 
 dotenv.config();
 
@@ -46,21 +49,22 @@ app.use(mongoSanitize());
 
 app.use(httpLogger);
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: 'Trop de requêtes depuis cette IP, veuillez réessayer plus tard.',
-  // Ne pas rate-limiter les preflight OPTIONS : ils ne consomment pas de ressources
-  // et les bloquer masque les vraies erreurs CORS.
-  skip: (req) => req.method === 'OPTIONS',
-});
-
-app.use(limiter);
-
+// The quota comes after the session so it can count per user rather than per
+// address — see `middleware/rateLimits.ts` for why that matters.
 app.use(cookieParser());
-app.use(express.json());
+
+/**
+ * How large a body may be.
+ *
+ * `express.json()` already defaults to 100 kb, so the limit existed — it was
+ * just implicit, and too low for the one request that can legitimately grow:
+ * the editor sends the whole programme on every save. Measured, five sessions
+ * of nine blocks and eighteen exercises weigh 5.4 kb, so a programme twenty
+ * times that size reaches 107 kb and the save would fail on a ceiling nobody
+ * chose. 256 kb leaves some forty times the test programme and still refuses
+ * an arbitrary body.
+ */
+app.use(express.json({ limit: '256kb' }));
 
 // Health check endpoint (avant les autres routes)
 app.get('/health', (req, res) => {
@@ -91,6 +95,8 @@ app.use(
   })
 );
 
+app.use(globalLimiter);
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api', routes);
@@ -103,9 +109,48 @@ app.use(globalErrorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-// DB + Server
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
+/**
+ * Starting, and stopping.
+ *
+ * `connectDB().then(...)` carried no `.catch()`: a database that refused the
+ * connection produced an unhandled rejection and a process that stayed alive
+ * with no server listening — up, healthy to anything watching the process,
+ * and answering nothing. A failure to start has to be a failure to start.
+ *
+ * And a stop has to finish what it began. Without this, a deploy's SIGTERM
+ * killed the process mid-request: the client saw a socket close with no
+ * status, and a write already sent to Mongo had no idea whether its answer
+ * ever arrived. We stop accepting, we let what is in flight finish, and only
+ * then we close the connection.
+ */
+const start = async () => {
+  try {
+    await connectDB();
+  } catch (err) {
+    logger.error('La connexion à la base a échoué, le serveur ne démarre pas', {
+      error: errorMessage(err),
+    });
+    process.exit(1);
+  }
+
+  const server = app.listen(PORT, () => {
+    logger.info(`Serveur démarré sur le port ${PORT}`);
   });
-});
+
+  const shutdown = (signal: string) => {
+    logger.info(`${signal} reçu, arrêt en cours`);
+    server.close(() => {
+      void mongoose.connection.close(false).then(() => process.exit(0));
+    });
+    // A request that never finishes must not hold the deploy hostage.
+    setTimeout(() => {
+      logger.error("Arrêt forcé : une requête n'a pas rendu la main à temps");
+      process.exit(1);
+    }, 10_000).unref();
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+};
+
+void start();

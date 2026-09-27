@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireCoach } from '../middleware/roles';
 import * as coachController from '../controllers/coachController';
 import { validate } from '../middleware/validate';
+import { invitationLimiter } from '../middleware/rateLimits';
 import {
   createExerciseSchema,
   updateExerciseSchema,
@@ -18,7 +19,12 @@ router.use(requireCoach);
 
 // INVITATIONS
 router.get('/invitation', coachController.getActiveInvitation);
-router.post('/generate-invitation', coachController.generateInvitation);
+// Minting a token that grants access to a roster: worth its own ceiling.
+router.post(
+  '/generate-invitation',
+  invitationLimiter,
+  coachController.generateInvitation
+);
 
 // CLIENTS
 router.get('/clients', coachController.getClients);
