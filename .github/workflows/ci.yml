@@ -1,0 +1,55 @@
+# What has to hold before anything is merged.
+#
+# Nothing guarded this repository until now, and it showed: `npm run lint`
+# had been failing on eight errors, `prettier --check` on thirty-four files
+# of fifty-two, and a three-parameter error handler had been answering every
+# error in HTML instead of JSON without anyone noticing. None of those needed
+# a clever test — they only needed something that runs.
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: Types, lint, format, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run build
+
+  checks:
+    name: Runtime checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # The error handler, mounted on a bare Express app. No database, no
+      # network: it asserts on the arity Express actually reads, and on the
+      # content type every error comes back with.
+      - run: npm run verify:errors
+
+      # `verify:copy` and `verify:rounds` need mongodb-memory-server, which
+      # downloads a MongoDB binary on first run. Deliberately not wired here
+      # yet: they have never been run at all — this container's network
+      # policy forbids the download — so making CI depend on them would mean
+      # shipping a step nobody has ever seen pass.

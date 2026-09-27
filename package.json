@@ -12,7 +12,9 @@
     "seed:exercises": "ts-node src/scripts/seedExercises.ts",
     "verify:copy": "ts-node src/scripts/verifyCopySession.ts",
     "verify:rounds": "ts-node src/scripts/verifyRoundsDone.ts",
-    "verify:errors": "ts-node src/scripts/verifyErrorHandler.ts"
+    "verify:errors": "ts-node src/scripts/verifyErrorHandler.ts",
+    "typecheck": "tsc --noEmit",
+    "format:check": "prettier --check src"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
