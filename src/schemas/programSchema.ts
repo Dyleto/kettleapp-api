@@ -1,13 +1,23 @@
 import { z } from 'zod';
 import { BLOCK_TYPES } from '../models/Session';
 
+/**
+ * No `.default(0)` on what the coach may simply not have set.
+ *
+ * Zero and absent are two different statements — "zero repetitions" is not
+ * "no repetitions prescribed" — and the codebase already says so of recorded
+ * values: "a missing key means 'not filled in' — never zero". The defaults
+ * were harmless only because they never ran: the validated value was
+ * discarded. Now that it is written back, they would start filling the
+ * database with zeroes nobody typed.
+ */
 const blockExerciseSchema = z.object({
   exerciseId: z.string().min(1),
   order: z.number().int().min(1),
-  sets: z.number().int().min(0).optional().default(0),
-  restBetweenSets: z.number().min(0).optional().default(0),
-  reps: z.number().int().min(0).optional().default(0),
-  duration: z.number().min(0).optional().default(0),
+  sets: z.number().int().min(0).optional(),
+  restBetweenSets: z.number().min(0).optional(),
+  reps: z.number().int().min(0).optional(),
+  duration: z.number().min(0).optional(),
   customMetric: z
     .object({
       value: z.number(),

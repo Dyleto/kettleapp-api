@@ -52,6 +52,10 @@ jobs:
       # against, and how large a body may be. Both were defaults nobody chose.
       - run: npm run verify:hardening
 
+      # What validation does to a request: strips what the schema did not
+      # ask for, runs its transforms, and checks the identifiers in the URL.
+      - run: npm run verify:validation
+
       # `verify:copy` and `verify:rounds` need mongodb-memory-server, which
       # downloads a MongoDB binary on first run. Deliberately not wired here
       # yet: they have never been run at all — this container's network

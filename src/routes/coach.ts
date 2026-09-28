@@ -1,8 +1,10 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { requireCoach } from '../middleware/roles';
 import * as coachController from '../controllers/coachController';
 import { validate } from '../middleware/validate';
 import { invitationLimiter } from '../middleware/rateLimits';
+import { idParamSchema, withClientIdParam } from '../schemas/paramsSchema';
 import {
   createExerciseSchema,
   updateExerciseSchema,
@@ -28,23 +30,32 @@ router.post(
 
 // CLIENTS
 router.get('/clients', coachController.getClients);
-router.get('/clients/:id', coachController.getClientDetails);
-router.get('/clients/:id/history', coachController.getClientHistory);
+router.get(
+  '/clients/:id',
+  validate(idParamSchema),
+  coachController.getClientDetails
+);
+router.get(
+  '/clients/:id/history',
+  validate(idParamSchema),
+  coachController.getClientHistory
+);
 router.patch(
   '/clients/:id/history/mark-viewed',
+  validate(idParamSchema),
   coachController.markHistoryAsViewed
 );
 
 // PROGRAMMES & SESSIONS
 router.put(
   '/clients/:clientId/program/sessions',
-  validate(updateProgramSessionsSchema),
+  validate(withClientIdParam(updateProgramSessionsSchema.shape.body)),
   coachController.updateProgramSessions
 );
 // Le client de l'URL est la destination : on copie VERS lui.
 router.post(
   '/clients/:clientId/program/sessions/copy',
-  validate(copySessionSchema),
+  validate(withClientIdParam(copySessionSchema.shape.body)),
   coachController.copySessionToClient
 );
 
@@ -55,12 +66,25 @@ router.post(
   validate(createExerciseSchema),
   coachController.createExercise
 );
-router.get('/exercises/:id', coachController.getExerciseDetails);
+router.get(
+  '/exercises/:id',
+  validate(idParamSchema),
+  coachController.getExerciseDetails
+);
 router.put(
   '/exercises/:id',
-  validate(updateExerciseSchema),
+  validate(
+    z.object({
+      params: idParamSchema.shape.params,
+      body: updateExerciseSchema.shape.body,
+    })
+  ),
   coachController.updateExercise
 );
-router.delete('/exercises/:id', coachController.deleteExercise);
+router.delete(
+  '/exercises/:id',
+  validate(idParamSchema),
+  coachController.deleteExercise
+);
 
 export default router;
