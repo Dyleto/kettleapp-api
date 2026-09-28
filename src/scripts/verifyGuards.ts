@@ -1,16 +1,17 @@
 /**
- * Reading the request's context, and what happens when it is not there.
+ * Lire le contexte de la requête, et ce qui arrive quand il n'est pas là.
  *
- * Controllers wrote `res.locals.coach as ICoach`, eighteen times. The
- * assertion is a promise to the compiler that nothing checks, and it holds
- * only as long as every route that mounts a controller also mounts its guard.
+ * Les contrôleurs écrivaient `res.locals.coach as ICoach`, dix-huit fois. Une
+ * assertion est une promesse faite au compilateur que rien ne vérifie, et elle
+ * ne tient qu'aussi longtemps que chaque route montant un contrôleur monte
+ * aussi son garde.
  *
- * The day one does not, the controller gets `undefined`, the cast hides it,
- * and the first `coach._id` throws a TypeError: a 500 with a stack trace, on
- * what is really a 403. This checks that the accessors turn that back into
- * what it is.
+ * Le jour où l'une ne le fait pas, le contrôleur reçoit `undefined`, le cast le
+ * masque, et le premier `coach._id` lève un TypeError : un 500 avec une pile
+ * d'appels, sur ce qui est en réalité un 403. On vérifie ici que les
+ * accesseurs rendent à cet échec ce qu'il est.
  *
- * Needs no database.
+ * Ne demande aucune base de données.
  *
  *   npm run verify:guards
  */
@@ -33,7 +34,8 @@ const ok = (label: string, cond: boolean, extra = '') => {
 
 const app = express();
 
-// A route whose guard ran: `res.locals.coach` is there, as in production.
+// Une route dont le garde est passé : `res.locals.coach` est là, comme en
+// production.
 app.get(
   '/guarded',
   (_req, res, next) => {
@@ -45,7 +47,7 @@ app.get(
   })
 );
 
-// The same controller, mounted without its guard — the mistake this is for.
+// Le même contrôleur, monté sans son garde — la faute que ceci couvre.
 app.get(
   '/unguarded',
   catchAsync(async (_req, res) => {
@@ -75,40 +77,36 @@ const main = async () => {
     };
   };
 
-  console.log('\n── with its guard, the controller reads the context');
+  console.log('\n── avec son garde, le contrôleur lit le contexte');
   {
     const r = await call('/guarded');
-    ok('the request goes through', r.status === 200, String(r.status));
-    ok(
-      '  → and carries the coach',
-      r.body.id === 'abc',
-      JSON.stringify(r.body)
-    );
+    ok('la requête passe', r.status === 200, String(r.status));
+    ok('  → et porte le coach', r.body.id === 'abc', JSON.stringify(r.body));
   }
 
-  // The point: a missing guard is an authorisation failure, and it has to
-  // read as one. Before, this was a TypeError on `undefined._id` — a 500.
-  console.log('\n── without it, the answer is a refusal, not a crash');
+  // L'enjeu : un garde manquant est un défaut d'autorisation, et doit se
+  // lire comme tel. Avant, c'était un TypeError sur `undefined._id` — un 500.
+  console.log('\n── sans lui, la réponse est un refus, pas un plantage');
   {
     const r = await call('/unguarded');
-    ok('a missing guard gives a 403', r.status === 403, String(r.status));
-    ok('  → not a 500', r.status !== 500, String(r.status));
+    ok('un garde manquant donne un 403', r.status === 403, String(r.status));
+    ok('  → pas un 500', r.status !== 500, String(r.status));
     ok(
-      '  → and says which space it was about',
+      '  → et dit de quel espace il s’agissait',
       /Espace Coach/.test(r.body.message ?? ''),
       r.body.message ?? '(rien)'
     );
     ok(
-      '  → with no stack trace leaking the cause',
+      '  → sans pile d’appels qui fuite la cause',
       !/TypeError|undefined/.test(JSON.stringify(r.body)),
       JSON.stringify(r.body).slice(0, 70)
     );
   }
   {
     const r = await call('/unguarded-client');
-    ok('the client side behaves the same', r.status === 403, String(r.status));
+    ok('le côté client se comporte pareil', r.status === 403, String(r.status));
     ok(
-      '  → and names its own space',
+      '  → et nomme son propre espace',
       /Espace Client/.test(r.body.message ?? ''),
       r.body.message ?? '(rien)'
     );

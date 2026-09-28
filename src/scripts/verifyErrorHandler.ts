@@ -1,17 +1,19 @@
 /**
- * The error handler answers, and answers in JSON.
+ * Le gestionnaire d'erreurs répond, et il répond en JSON.
  *
- * Express decides whether a middleware handles errors by its arity:
- * `fn.length === 4`. `globalErrorHandler` declared three parameters, so it
- * was mounted as an ordinary middleware and never ran. Every error fell
- * through to Express's built-in handler, which replies in HTML — and the
- * front end parses JSON.
+ * Express décide qu'un middleware traite les erreurs à son arité :
+ * `fn.length === 4`. `globalErrorHandler` en déclarait trois, il était donc
+ * monté comme un middleware ordinaire et ne tournait jamais. Toutes les
+ * erreurs tombaient sur le gestionnaire interne d'Express, qui répond en HTML
+ * — et le front analyse du JSON.
  *
- * Nothing crashed, no test failed, and the API had been answering the wrong
- * content type for every error it ever produced. That is exactly the kind of
- * defect a running check catches and a reading does not.
+ * Rien ne plantait, aucun test n'échouait, et l'API renvoyait le mauvais type
+ * de contenu pour chaque erreur qu'elle a jamais produite. C'est exactement le
+ * genre de défaut qu'une vérification qui s'exécute attrape et qu'une lecture
+ * ne voit pas.
  *
- * Needs no database: the handler is mounted on a bare Express app.
+ * Ne demande aucune base de données : le gestionnaire est monté sur une
+ * application Express nue.
  *
  *   npm run verify:errors
  */
@@ -30,14 +32,15 @@ const ok = (label: string, cond: boolean, extra = '') => {
   );
 };
 
-// Winston writes to stdout, and a verification's output has to stay
-// readable. The levels themselves are covered by the response's status.
+// Winston écrit sur la sortie standard, et le compte rendu d'une
+// vérification doit rester lisible. Les niveaux eux-mêmes sont couverts par
+// le statut de la réponse.
 logger.transports.forEach((t) => (t.silent = true));
 
 const app = express();
 app.use(express.json());
 
-// The three ways an error reaches the handler in this codebase.
+// Les trois chemins par lesquels une erreur atteint le gestionnaire ici.
 app.get('/app-error', (_req, _res, next) => {
   next(new AppError('Client introuvable', 404));
 });
@@ -67,8 +70,8 @@ const main = async () => {
     const r = await fetch(`http://127.0.0.1:${port}${path}`);
     const type = (r.headers.get('content-type') ?? '').split(';')[0];
     const raw = await r.text();
-    // A non-JSON answer is the very defect under test, so parsing has to
-    // fail softly rather than throw: the assertion reads `type` and reports.
+    // Une réponse non-JSON est précisément le défaut sous test : l'analyse
+    // doit échouer en douceur plutôt que lancer, l'assertion lisant `type`.
     const body = ((): Record<string, unknown> | null => {
       try {
         return JSON.parse(raw) as Record<string, unknown>;
@@ -79,57 +82,57 @@ const main = async () => {
     return { status: r.status, type, body, raw };
   };
 
-  // ── The handler runs at all ─────────────────────────────────────────────
+  // ── Le gestionnaire tourne, tout simplement ─────────────────────────────
   //
-  // This is the whole point. Express reads the arity, so the assertion reads
-  // it too: a regression here is one deleted parameter away, and it would
-  // otherwise only show in production.
-  console.log('\n── Express recognises it as an error handler');
+  // C'est tout l'enjeu. Express lit l'arité, l'assertion la lit donc aussi :
+  // une régression ici est à un paramètre supprimé, et ne se verrait sinon
+  // qu'en production.
+  console.log('\n── Express le reconnaît comme gestionnaire d’erreurs');
   ok(
-    'the handler declares four parameters',
+    'le gestionnaire déclare quatre paramètres',
     globalErrorHandler.length === 4,
     `length = ${globalErrorHandler.length}`
   );
 
-  console.log('\n── an error answers in JSON, never in HTML');
+  console.log('\n── une erreur répond en JSON, jamais en HTML');
   for (const [label, path] of [
-    ['a thrown AppError', '/app-error'],
-    ['an error thrown synchronously', '/thrown'],
-    ['an async error caught by catchAsync', '/async'],
+    ['une AppError lancée', '/app-error'],
+    ['une erreur lancée de façon synchrone', '/thrown'],
+    ['une erreur asynchrone attrapée par catchAsync', '/async'],
   ] as const) {
     const r = await call(path);
     ok(
-      `${label} answers in JSON`,
+      `${label} répond en JSON`,
       r.type === 'application/json',
       `${r.type} — ${r.raw.slice(0, 48)}`
     );
     ok(
-      '  → and carries a request id',
+      '  → et porte un identifiant de requête',
       r.body !== null && 'requestId' in r.body
     );
   }
 
-  // ── The status codes the API promises ──────────────────────────────────
-  console.log('\n── each error keeps its own status');
+  // ── Les statuts que l'API promet ───────────────────────────────────────
+  console.log('\n── chaque erreur garde son statut');
   {
     const r = await call('/app-error');
-    ok('an AppError keeps its status', r.status === 404, String(r.status));
+    ok('une AppError garde son statut', r.status === 404, String(r.status));
     ok(
-      '  → and its message',
+      '  → et son message',
       r.body?.message === 'Client introuvable',
       String(r.body?.message)
     );
     ok(
-      '  → marked as a client failure',
+      '  → marquée comme faute du client',
       r.body?.status === 'fail',
       String(r.body?.status)
     );
   }
   {
     const r = await call('/thrown');
-    ok('an unexpected error is a 500', r.status === 500, String(r.status));
+    ok('une erreur inattendue est un 500', r.status === 500, String(r.status));
     ok(
-      '  → marked as a server error',
+      '  → marquée comme erreur serveur',
       r.body?.status === 'error',
       String(r.body?.status)
     );
@@ -137,28 +140,32 @@ const main = async () => {
   {
     const r = await call('/async');
     ok(
-      'an async AppError keeps its status',
+      'une AppError asynchrone garde son statut',
       r.status === 403,
       String(r.status)
     );
   }
 
-  // ── Mongoose failures are normalised, and logged for what they are ─────
+  // ── Les erreurs Mongoose sont normalisées, et journalisées pour ce
+  // qu'elles sont ────────────────────────────────────────────────────────
   //
-  // A CastError is a malformed id: a client mistake, and a 400. It used to be
-  // logged at error level with a stack trace — the logs claimed a crash that
-  // never happened — and only then downgraded in the response.
-  console.log('\n── a malformed id is a client mistake, not a crash');
+  // Un CastError est un identifiant mal formé : une faute du client, et un
+  // 400. Il était journalisé en niveau erreur avec sa pile d'appels — le
+  // journal annonçait un plantage qui n'avait pas eu lieu — puis rétrogradé
+  // seulement dans la réponse.
+  console.log(
+    '\n── un identifiant mal formé est une faute du client, pas un plantage'
+  );
   {
     const r = await call('/cast');
-    ok('a CastError becomes a 400', r.status === 400, String(r.status));
+    ok('un CastError devient un 400', r.status === 400, String(r.status));
     ok(
-      '  → with a message the client can read',
+      '  → avec un message lisible par le client',
       r.body?.message === 'Ressource introuvable (ID invalide)',
       String(r.body?.message)
     );
     ok(
-      '  → and not a server error',
+      '  → et pas une erreur serveur',
       r.body?.status === 'fail',
       String(r.body?.status)
     );

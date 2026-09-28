@@ -1,23 +1,24 @@
 /**
- * What validation actually does to a request.
+ * Ce que la validation fait réellement à une requête.
  *
- * It used to judge and forget. `validate` parsed the request, then handed
- * controllers the raw `req.body` — so the parsed, cleaned value was thrown
- * away on every call. Two consequences, both verified before being fixed:
+ * Elle jugeait, puis oubliait. `validate` analysait la requête, puis rendait
+ * aux contrôleurs le `req.body` brut — la valeur validée et nettoyée était donc
+ * jetée à chaque appel. Deux conséquences, vérifiées avant d'être corrigées :
  *
- *   — Extra fields survived. `POST /users` ran `new User(req.body)`, and
- *     since `isAdmin` is declared on the Mongoose schema, any signed-in user
- *     could hand themselves the admin flag. Zod had stripped it; nobody read
- *     the stripped copy.
+ *   — Les champs en trop survivaient. `POST /users` faisait
+ *     `new User(req.body)`, et comme `isAdmin` est déclaré sur le schéma
+ *     Mongoose, tout utilisateur connecté pouvait s'attribuer le drapeau
+ *     administrateur. Zod l'avait retiré ; personne ne lisait la copie
+ *     nettoyée.
  *
- *   — Every `.default()` and `.transform()` was dead code. The transform on
- *     `suggestedDays` de-duplicates and sorts the days, and carries a comment
- *     explaining why it belongs there. It had never run.
+ *   — Chaque `.default()` et `.transform()` était du code mort. Le transform de
+ *     `suggestedDays` dédoublonne et trie les jours, et porte un commentaire
+ *     qui explique pourquoi il a sa place là. Il n'avait jamais tourné.
  *
- * And route parameters were not validated at all: `:id` went to Mongoose as
- * it arrived.
+ * Et les paramètres de route n'étaient pas validés du tout : `:id` partait chez
+ * Mongoose tel qu'il arrivait.
  *
- * Needs no database.
+ * Ne demande aucune base de données.
  *
  *   npm run verify:validation
  */
@@ -44,7 +45,7 @@ const ok = (label: string, cond: boolean, extra = '') => {
 const app = express();
 app.use(express.json());
 
-// Each route echoes back exactly what the controller would read.
+// Chaque route renvoie exactement ce que le contrôleur lirait.
 app.post('/exercise', validate(createExerciseSchema), (req, res) =>
   res.json({ body: req.body })
 );
@@ -78,8 +79,8 @@ const main = async () => {
     };
   };
 
-  // ── An extra field does not reach the controller ──────────────────────
-  console.log('\n── what the schema did not ask for does not get through');
+  // ── Un champ en trop n'atteint pas le contrôleur ──────────────────────
+  console.log('\n── ce que le schéma n’a pas demandé ne passe pas');
   {
     // Le champ en trop est celui qui comptait : `POST /users` faisait
     // `new User(req.body)`, et `isAdmin` est déclaré sur le schéma Mongoose.
@@ -103,8 +104,8 @@ const main = async () => {
     );
   }
 
-  // ── Transforms and defaults actually run ─────────────────────────────
-  console.log('\n── the schema shapes the value, it does not only judge it');
+  // ── Les transforms et les défauts tournent vraiment ───────────────────
+  console.log('\n── le schéma façonne la valeur, il ne fait pas que la juger');
   {
     const r = await call('PUT', '/program', {
       sessions: [
@@ -124,55 +125,65 @@ const main = async () => {
     const session = (r.json.body as { sessions: Record<string, unknown>[] })
       .sessions[0];
     ok(
-      'the days are de-duplicated and sorted',
+      'les jours sont dédoublonnés et triés',
       JSON.stringify(session.suggestedDays) === '[0,3]',
       JSON.stringify(session.suggestedDays)
     );
-    // And what the coach did not set stays unset: zero is a different claim
-    // from absent, so the schema no longer invents zeroes.
+    // Et ce que le coach n'a pas réglé reste non réglé : zéro est une autre
+    // affirmation qu'absent, donc le schéma n'invente plus de zéros.
     const exercise = (
       session.blocks as { exercises: Record<string, unknown>[] }[]
     )[0].exercises[0];
     ok(
-      '  → and what was never set stays unset, not zero',
+      '  → et ce qui n’a jamais été réglé reste absent, pas zéro',
       !('sets' in exercise) && !('reps' in exercise),
       JSON.stringify(exercise)
     );
   }
 
-  // ── Route parameters are checked before any query runs ───────────────
-  console.log('\n── an identifier in the URL is checked, not forwarded');
+  // ── Les paramètres de route sont contrôlés avant toute requête ────────
+  console.log('\n── un identifiant d’URL est contrôlé, pas transmis');
   {
     const good = await call('GET', '/thing/507f1f77bcf86cd799439011');
-    ok('a real ObjectId passes', good.status === 200, String(good.status));
+    ok('un vrai ObjectId passe', good.status === 200, String(good.status));
 
     const bad = await call('GET', '/thing/pas-un-id');
-    ok('a malformed one is refused', bad.status === 400, String(bad.status));
+    ok(
+      'un identifiant mal formé est refusé',
+      bad.status === 400,
+      String(bad.status)
+    );
     const errors = bad.json.errors as { field: string; message: string }[];
     ok(
-      '  → and the answer names the field',
+      '  → et la réponse nomme le champ',
       Array.isArray(errors) && errors[0]?.field === 'id',
       JSON.stringify(errors)
     );
   }
 
-  // ── A query string is validated too, without being emptied ───────────
-  console.log('\n── the query string keeps what the schema did not describe');
+  // ── La chaîne de requête est validée aussi, sans être vidée ───────────
+  console.log(
+    '\n── la chaîne de requête garde ce que le schéma n’a pas décrit'
+  );
   {
     const r = await call('GET', '/search?q=squat&page=2');
     const query = r.json.query as Record<string, unknown>;
-    ok('a valid query passes', r.status === 200, String(r.status));
-    ok('  → the described field is there', query.q === 'squat');
-    // Express 5 makes `req.query` a getter, so it is merged rather than
-    // replaced. The consequence is worth stating: an undescribed parameter
-    // survives, and a schema is not a filter for the query string.
+    ok('une requête valide passe', r.status === 200, String(r.status));
+    ok('  → le champ décrit est là', query.q === 'squat');
+    // `req.query` est fusionné et non remplacé. La conséquence mérite d'être
+    // écrite : un paramètre non décrit survit, et un schéma n'est pas un
+    // filtre pour la chaîne de requête.
     ok(
-      '  → and an undescribed one is not dropped',
+      '  → et un paramètre non décrit n’est pas perdu',
       query.page === '2',
       JSON.stringify(query)
     );
     const bad = await call('GET', '/search?q=a');
-    ok('an invalid query is refused', bad.status === 400, String(bad.status));
+    ok(
+      'une requête invalide est refusée',
+      bad.status === 400,
+      String(bad.status)
+    );
   }
 
   server.close();

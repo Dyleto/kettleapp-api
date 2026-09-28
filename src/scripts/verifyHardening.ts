@@ -1,18 +1,20 @@
 /**
- * What the API refuses, and what it must not refuse.
+ * Ce que l'API refuse, et ce qu'elle ne doit pas refuser.
  *
- * Two ceilings, both of which were wrong in the same way: chosen by default
- * rather than on purpose, and never exercised.
+ * Deux plafonds, faux tous les deux de la même façon : choisis par défaut
+ * plutôt qu'à dessein, et jamais éprouvés.
  *
- * The quota counted by IP, so two coaches on one gym's wifi shared 100
- * requests per 15 minutes — and the editor alone can exhaust that, because it
- * saves itself and sends a structural change immediately. Running out means
- * being locked out for a quarter of an hour holding unsaved work.
+ * Le quota comptait par adresse, si bien que deux coachs sur le wifi d'une
+ * même salle partageaient 100 requêtes par quart d'heure — que l'atelier seul
+ * peut épuiser, puisqu'il s'enregistre tout seul et envoie un changement de
+ * structure immédiatement. Arriver au bout, c'est être bloqué un quart d'heure
+ * avec des modifications non enregistrées.
  *
- * The body limit was Express's implicit 100 kb, which a large programme can
- * legitimately exceed: the editor sends the whole programme on every save.
+ * La limite de corps était le défaut implicite d'Express, 100 Ko, qu'un gros
+ * programme peut légitimement dépasser : l'atelier envoie le programme entier
+ * à chaque enregistrement.
  *
- * Needs no database.
+ * Ne demande aucune base de données.
  *
  *   npm run verify:hardening
  */
@@ -34,17 +36,17 @@ const ok = (label: string, cond: boolean, extra = '') => {
 
 const app = express();
 
-// The real signed-in state, as far as a quota is concerned: a session that
-// names a user. The header stands in for the cookie.
+// L'état connecté, du point de vue d'un quota : une session qui nomme un
+// utilisateur. L'en-tête tient lieu de cookie.
 app.use((req, _res, next) => {
   const user = req.header('x-test-user');
   if (user) req.session = { userId: user } as typeof req.session;
   next();
 });
 
-// Two requests per window, so exhausting it is cheap — built by the same
-// factory the app's own limiters use, so the counting logic under test is the
-// one that ships.
+// Deux requêtes par fenêtre, pour l'épuiser à peu de frais — construit par la
+// même fabrique que les limiteurs de l'application, si bien que la logique de
+// comptage éprouvée est celle qui est livrée.
 app.use(
   '/quota',
   makeLimiter({ windowMs: 60_000, limit: 2, message: 'Trop.' })
@@ -69,35 +71,38 @@ const main = async () => {
     return r.status;
   };
 
-  // ── The quota belongs to a user, not to an address ────────────────────
-  console.log('\n── two people behind one address keep separate quotas');
-  ok('the first request passes', (await get('/quota', 'alice')) === 200);
-  ok('  → and the second', (await get('/quota', 'alice')) === 200);
+  // ── Le quota appartient à un utilisateur, pas à une adresse ───────────
+  console.log(
+    '\n── deux personnes derrière une adresse gardent des quotas distincts'
+  );
+  ok('la première requête passe', (await get('/quota', 'alice')) === 200);
+  ok('  → et la deuxième', (await get('/quota', 'alice')) === 200);
   ok(
-    '  → the third is refused: the ceiling is two',
+    '  → la troisième est refusée : le plafond est de deux',
     (await get('/quota', 'alice')) === 429
   );
-  // The point. Same process, same address — a different signed-in user.
+  // L'enjeu. Même process, même adresse — un autre utilisateur connecté.
   ok(
-    'another user is untouched by the first one running out',
+    'un autre utilisateur n’est pas touché par l’épuisement du premier',
     (await get('/quota', 'bob')) === 200,
     'même adresse, autre session'
   );
-  ok('  → and keeps their own count', (await get('/quota', 'bob')) === 200);
-  ok('  → up to their own ceiling', (await get('/quota', 'bob')) === 429);
+  ok('  → et garde son propre compte', (await get('/quota', 'bob')) === 200);
+  ok('  → jusqu’à son propre plafond', (await get('/quota', 'bob')) === 429);
 
-  // Anonymous callers still fall back to the address, which is all there is.
-  console.log('\n── with no session, the address is all we have');
-  ok('an anonymous caller is counted', (await get('/quota')) === 200);
-  ok('  → and reaches the same ceiling', (await get('/quota')) === 200);
-  ok('  → then is refused', (await get('/quota')) === 429);
+  // L'appelant anonyme retombe sur l'adresse, qui est tout ce qu'on a.
+  console.log('\n── sans session, l’adresse est tout ce qu’on a');
+  ok('un appelant anonyme est compté', (await get('/quota')) === 200);
+  ok('  → et atteint le même plafond', (await get('/quota')) === 200);
+  ok('  → puis est refusé', (await get('/quota')) === 429);
 
-  // ── The body limit is the one we chose ───────────────────────────────
+  // ── La limite de corps est celle qu'on a choisie ──────────────────────
   //
-  // Measured: five sessions of nine blocks and eighteen exercises weigh
-  // 5.4 kb, so a programme twenty times that size reaches 107 kb — above the
-  // implicit default, and the save would have failed on a ceiling nobody set.
-  console.log('\n── a whole programme fits, an arbitrary body does not');
+  // Mesuré : cinq séances de neuf blocs et dix-huit exercices pèsent 5,4 Ko,
+  // donc un programme vingt fois plus chargé atteint 107 Ko — au-dessus du
+  // défaut implicite, et l'enregistrement aurait échoué sur un plafond que
+  // personne n'avait réglé.
+  console.log('\n── un programme entier passe, un corps arbitraire non');
   const post = async (bytes: number) => {
     const r = await fetch(`http://127.0.0.1:${port}/body`, {
       method: 'POST',
@@ -110,25 +115,25 @@ const main = async () => {
 
   const large = await post(150_000);
   ok(
-    'a 150 kb programme goes through',
+    'un programme de 150 Ko passe',
     large.status === 200,
     `${large.status} ${large.raw.slice(0, 40)}`
   );
   ok(
-    '  → which the implicit 100 kb default would have refused',
+    '  → ce que le défaut implicite de 100 Ko aurait refusé',
     large.status === 200
   );
 
   const tooLarge = await post(400_000);
   ok(
-    'a 400 kb body is refused',
+    'un corps de 400 Ko est refusé',
     tooLarge.status === 413,
     String(tooLarge.status)
   );
-  // And the refusal has to reach the client as JSON: a 413 that arrives as an
-  // HTML page is the very defect the error handler was fixed for.
+  // Et le refus doit arriver au client en JSON : un 413 qui arrive en page
+  // HTML est précisément le défaut pour lequel le gestionnaire a été réparé.
   ok(
-    '  → in JSON, like every other error',
+    '  → en JSON, comme toute autre erreur',
     tooLarge.type === 'application/json',
     `${tooLarge.type} — ${tooLarge.raw.slice(0, 40)}`
   );
