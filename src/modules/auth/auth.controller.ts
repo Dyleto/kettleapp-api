@@ -19,6 +19,19 @@ import { getErrorMessage } from '../../shared/utils/errors';
 
 // ─── Google OAuth (code flow) ─────────────────────────────────────────────────
 
+/**
+ * Ouvrir une session à partir du code renvoyé par Google.
+ *
+ * Le jeton d'invitation est facultatif et change tout : sans lui on se
+ * reconnecte, avec lui on rejoint le suivi d'un coach. C'est le seul chemin
+ * par lequel un client entre dans Kettle, et il doit rester franchissable
+ * plusieurs fois — quelqu'un peut ouvrir le lien, abandonner, et recommencer.
+ *
+ * Le rattachement se fait avant la session, jamais après : une session ouverte
+ * sur un compte qui n'a pas été rattaché laisserait la personne devant un
+ * espace client vide, sans moyen de rejouer le lien qu'elle vient de
+ * consommer.
+ */
 export const googleAuthCallback = catchAsync(
   async (req: Request, res: Response) => {
     const { code, redirectUri, invitationToken } = req.body;
@@ -119,6 +132,15 @@ export const googleAuthCallback = catchAsync(
 
 // ─── Google One Tap ───────────────────────────────────────────────────────────
 
+/**
+ * La même ouverture de session, par le bandeau One Tap de Google.
+ *
+ * Google propose deux flux et ils n'échangent pas la même chose : ici la page
+ * reçoit directement un jeton d'identité, là-bas un code à échanger côté
+ * serveur. Seule la première étape diffère — d'où deux contrôleurs qui se
+ * ressemblent, et une suite commune à partir du moment où l'on tient
+ * l'identité.
+ */
 export const googleOneTapCallback = catchAsync(
   async (req: Request, res: Response) => {
     const { credential } = req.body;
@@ -186,6 +208,18 @@ export const googleOneTapCallback = catchAsync(
 
 // ─── /me ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Qui est connecté, et ce qu'il a le droit de voir.
+ *
+ * Le front s'en sert au démarrage pour savoir quel espace ouvrir : c'est
+ * `buildUser` qui dit s'il y a un coach, un client, ou les deux derrière ce
+ * compte. Un même compte peut tenir les deux rôles, ce qui interdit de déduire
+ * l'espace d'un simple drapeau.
+ *
+ * Une session qui pointe vers un compte disparu donne un 404 plutôt qu'un 401 :
+ * ce n'est pas un défaut d'authentification, la session est valide — c'est le
+ * compte qui n'est plus là, et les deux cas appellent des suites différentes.
+ */
 export const getMe = catchAsync(async (req: Request, res: Response) => {
   const userId = req.session.userId;
   const rid = req.requestId ?? '?';
@@ -209,6 +243,14 @@ export const getMe = catchAsync(async (req: Request, res: Response) => {
 
 // ─── Invitation ───────────────────────────────────────────────────────────────
 
+/**
+ * Dire ce que vaut un lien d'invitation, avant toute connexion.
+ *
+ * Appelé quand la personne ouvre le lien, donc avant qu'elle ne s'identifie :
+ * découvrir qu'un lien est expiré après s'être connecté chez Google serait
+ * un détour pour rien. Le nom du coach est renvoyé pour que l'écran puisse
+ * dire qui invite, ce qui est la seule chose qui rende ce lien crédible.
+ */
 export const verifyInviteToken = catchAsync(
   async (req: Request, res: Response) => {
     const token = req.query.token as string;
@@ -253,6 +295,15 @@ export const verifyInviteToken = catchAsync(
 
 // ─── Logout ───────────────────────────────────────────────────────────────────
 
+/**
+ * Fermer la session, des deux côtés.
+ *
+ * Détruire la session en base et effacer le cookie : l'un sans l'autre laisse
+ * soit un cookie qui ne correspond plus à rien, soit une session que le
+ * navigateur continue de présenter. La destruction est attendue avant de
+ * répondre, sinon le client pourrait rappeler l'API avant qu'elle n'ait eu
+ * lieu.
+ */
 export const logout = catchAsync(async (req: Request, res: Response) => {
   const userId = req.session.userId;
   const rid = req.requestId ?? '?';
@@ -268,6 +319,17 @@ export const logout = catchAsync(async (req: Request, res: Response) => {
 
 // ─── Connexion de développement (jamais en production) ──────────────────────
 
+/**
+ * Ouvrir une session sans passer par Google — développement seulement.
+ *
+ * Cette route n'est montée que hors production (voir `auth.routes.ts`), et
+ * c'est ce montage conditionnel qui la rend acceptable : elle ouvre une
+ * session sur un compte arbitraire à partir d'un simple identifiant.
+ *
+ * Elle existe parce que le banc d'essai en a besoin : mener une séance dans un
+ * vrai navigateur suppose d'être connecté, et il n'est pas question de faire
+ * passer une vérification automatisée par le flux OAuth de Google.
+ */
 export const devLogin = catchAsync(async (req: Request, res: Response) => {
   const userId = req.body.userId || process.env.DEV_LOGIN_USER_ID;
   const rid = req.requestId ?? '?';

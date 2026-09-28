@@ -31,13 +31,25 @@ export const getActiveInvitation = catchAsync(
   }
 );
 
+/**
+ * Obtenir un lien d'invitation, en recyclant celui qui est encore bon.
+ *
+ * Un coach n'a pas besoin d'un lien par client : le même sert à tous, et en
+ * créer un à chaque clic laisserait derrière lui une traînée de jetons valides
+ * dont aucun ne serait révoqué. Tant qu'il reste cinq jours de validité, on
+ * rend le même.
+ *
+ * Cinq jours et non zéro : un lien qui expire demain est techniquement valide
+ * et pratiquement inutile — le client à qui on l'envoie l'ouvrira peut-être
+ * après le week-end.
+ */
 export const generateInvitation = catchAsync(
   async (req: Request, res: Response) => {
     const coach = coachOf(res);
-    const expiresIn = req.body.expiresIn || 7; // jours
+    const expiresIn = req.body.expiresIn || 7; // en jours
     const minimumDaysLeft = 5;
 
-    // Si on a déjà un token valide pour encore 5 jours, on le recycle
+    // Un jeton encore valide au moins cinq jours est réutilisé tel quel.
     const minimumValidUntil = new Date();
     minimumValidUntil.setDate(minimumValidUntil.getDate() + minimumDaysLeft);
 
@@ -61,8 +73,9 @@ export const generateInvitation = catchAsync(
       message: "Lien d'invitation généré avec succès",
       token: invitationToken.token,
       expiresAt: invitationToken.expiresAt,
-      // (Bonus) l'URL directe c'est pratique :
-      // inviteUrl: `${process.env.FRONTEND_URL}/join?token=${invitationToken.token}`
+      // L'URL complète est fabriquée par le front, qui connaît son propre
+      // domaine : la construire ici obligerait à tenir FRONTEND_URL à jour
+      // dans deux endroits.
     });
   }
 );
