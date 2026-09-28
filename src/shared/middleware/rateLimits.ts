@@ -2,17 +2,17 @@ import type { Request } from 'express';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 /**
- * Who a quota belongs to.
+ * À qui appartient un quota.
  *
- * Counting by IP punishes the wrong people. Two coaches working from the same
- * gym's wifi share one address, so they shared one quota of 100 requests — and
- * the second one to reach it was locked out by the first one's work. Once
- * signed in, the session says who is asking, and that is who the quota
- * belongs to.
+ * Compter par adresse punit les mauvaises personnes. Deux coachs qui
+ * travaillent depuis le wifi d'une même salle partagent une adresse, donc
+ * partageaient un quota de 100 requêtes — et le second à l'épuiser était
+ * bloqué par le travail du premier. Une fois connecté, la session dit qui
+ * demande, et c'est à celui-là que le quota appartient.
  *
- * `ipKeyGenerator` is used for the anonymous case rather than `req.ip`
- * directly: it normalises IPv6, where a single client holds a whole /64 and
- * could otherwise walk around any limit by changing the last block.
+ * `ipKeyGenerator` sert au cas anonyme plutôt que `req.ip` brut : il normalise
+ * l'IPv6, où un seul client tient un /64 entier et contournerait sinon
+ * n'importe quel plafond en changeant le dernier bloc.
  */
 const perUserOrIp = (req: Request): string =>
   req.session?.userId
@@ -20,12 +20,13 @@ const perUserOrIp = (req: Request): string =>
     : ipKeyGenerator(req.ip ?? '');
 
 /**
- * One quota, built one way.
+ * Un quota, construit d'une seule façon.
  *
- * Every limiter in the app shares the same notion of whose quota it is and
- * the same exemption for preflights; only the window, the ceiling and the
- * message differ. Exported so a check can build one with a ceiling of two and
- * exercise the real counting logic rather than a copy of it.
+ * Tous les limiteurs de l'application partagent la même notion de « à qui
+ * appartient ce quota » et la même exemption des préflights ; seuls la
+ * fenêtre, le plafond et le message changent. Exportée pour qu'une
+ * vérification puisse en construire un avec un plafond de deux et éprouver la
+ * logique de comptage réellement livrée, pas une copie.
  */
 export const makeLimiter = (opts: {
   windowMs: number;
@@ -36,25 +37,27 @@ export const makeLimiter = (opts: {
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: perUserOrIp,
-    // Preflights consume nothing, and blocking them turns a quota into an
-    // unexplained "CORS error" in the browser, which hides the real cause.
+    // Les préflights ne consomment rien, et les bloquer transforme un quota
+    // en « erreur CORS » inexpliquée dans le navigateur, qui masque la vraie
+    // cause.
     skip: (req: Request) => req.method === 'OPTIONS',
     ...opts,
   });
 
 /**
- * The ceiling for ordinary use.
+ * Le plafond de l'usage ordinaire.
  *
- * It was 100 per 15 minutes for the whole API, which the editor alone can
- * exhaust: the workshop saves itself, and a structural change — adding a
- * block, an exercise, reordering — is sent immediately, with no debounce. A
- * coach building five sessions of three blocks and three exercises produces
- * some sixty writes before counting a single page view, and running out means
- * being locked out for a quarter of an hour holding unsaved work. The app even
- * has a screen for that failure; a quota should not be what triggers it.
+ * Il était de 100 par quart d'heure pour toute l'API, ce que l'atelier seul
+ * peut épuiser : il s'enregistre tout seul, et un changement de structure —
+ * ajouter un bloc, un exercice, réordonner — part immédiatement, sans
+ * temporisation. Un coach qui construit cinq séances de trois blocs et trois
+ * exercices produit une soixantaine d'écritures avant même d'avoir affiché une
+ * page, et arriver au bout signifie être bloqué un quart d'heure avec des
+ * modifications non enregistrées. L'application a justement un écran pour cet
+ * échec — un quota ne devrait pas être ce qui le déclenche.
  *
- * 40 per minute over a 15-minute window leaves the fastest human hand a wide
- * margin while still stopping a script cold.
+ * 40 par minute sur une fenêtre d'un quart d'heure laisse une large marge à la
+ * main la plus rapide et arrête net un script.
  */
 export const globalLimiter = makeLimiter({
   windowMs: 15 * 60 * 1000,
@@ -63,10 +66,10 @@ export const globalLimiter = makeLimiter({
 });
 
 /**
- * Signing in, which is where guessing is attempted.
+ * La connexion, c'est-à-dire l'endroit où l'on tente sa chance.
  *
- * Deliberately far stricter than the rest: ten attempts an hour is generous
- * for someone who owns the account and useless to someone who does not.
+ * Volontairement bien plus serré que le reste : dix tentatives par heure est
+ * généreux pour qui possède le compte, et inutile pour qui ne le possède pas.
  */
 export const authLimiter = makeLimiter({
   windowMs: 60 * 60 * 1000,
@@ -75,10 +78,11 @@ export const authLimiter = makeLimiter({
 });
 
 /**
- * Minting an invitation link.
+ * Frapper un lien d'invitation.
  *
- * Each call can create a token that grants access to a coach's roster, so it
- * is worth its own ceiling — and no coach invites thirty clients in an hour.
+ * Chaque appel peut créer un jeton qui donne accès à la liste d'un coach : ça
+ * mérite son propre plafond — et aucun coach n'invite trente clients en une
+ * heure.
  */
 export const invitationLimiter = makeLimiter({
   windowMs: 60 * 60 * 1000,

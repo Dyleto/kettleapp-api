@@ -1,24 +1,25 @@
 /**
- * What a caught value actually is.
+ * Ce qu'est réellement une valeur attrapée.
  *
- * `catch (err: any)` was the shortcut, and it costs the one thing a catch
- * block needs: knowing what it holds. A rejected promise can carry anything —
- * an Error, a string, `undefined` — so `err.message` is a guess that reads as
- * a certainty, and `undefined` is what ends up in the logs.
+ * `catch (err: any)` était le raccourci, et il coûte la seule chose dont un
+ * bloc catch a besoin : savoir ce qu'il tient. Une promesse rejetée peut
+ * porter n'importe quoi — une Error, une chaîne, `undefined` — donc
+ * `err.message` est une supposition qui se lit comme une certitude, et c'est
+ * `undefined` qui finit dans le journal.
  *
- * TypeScript already types a caught value as `unknown` under `strict`. These
- * two helpers are what turns that back into something usable, once, instead
- * of an assertion at every call site.
+ * TypeScript type déjà une valeur attrapée en `unknown` sous `strict`. Ces
+ * deux fonctions font le rétrécissement une fois pour toutes, au lieu d'une
+ * assertion à chaque appel.
  */
 
-/** The message, whatever was thrown. Never `undefined`. */
+/** Le message, quoi qui ait été lancé. Jamais `undefined`. */
 export const errorMessage = (err: unknown): string => {
   if (err instanceof Error) return err.message;
   if (typeof err === 'string') return err;
   return String(err);
 };
 
-/** The shape Axios rejects with, as much of it as we read. */
+/** La forme avec laquelle Axios rejette, pour ce qu'on en lit. */
 export interface HttpErrorBody {
   status?: number;
   error?: string;
@@ -26,12 +27,12 @@ export interface HttpErrorBody {
 }
 
 /**
- * What an HTTP client's rejection carries, when it carries anything.
+ * Ce que porte le rejet d'un client HTTP, quand il porte quelque chose.
  *
- * Google answers a failed token exchange with a body that names the reason —
- * `invalid_grant`, `redirect_uri_mismatch` — and that reason is the only
- * thing that makes such a failure diagnosable. Reading it off `any` worked
- * until the day the rejection was not an Axios error at all.
+ * Google répond à un échange de code raté par un corps qui nomme la raison —
+ * `invalid_grant`, `redirect_uri_mismatch` — et cette raison est la seule
+ * chose qui rende un tel échec diagnosticable. La lire depuis un `any`
+ * marchait jusqu'au jour où le rejet n'était pas du tout une erreur Axios.
  */
 export const httpErrorBody = (err: unknown): HttpErrorBody => {
   if (typeof err !== 'object' || err === null) return {};

@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { AppError } from '../utils/AppError';
 import logger from '../utils/logger';
 
-/** What a Mongoose or JWT failure really means, in HTTP terms. */
+/** Ce qu'une erreur Mongoose ou JWT veut vraiment dire, côté HTTP. */
 const normalize = (
   err: Error,
   statusCode: number,
@@ -21,21 +21,22 @@ const normalize = (
 };
 
 /**
- * The single exit for every error the API produces.
+ * La sortie unique de toutes les erreurs de l'API.
  *
- * `next` is declared and unused on purpose. Express decides whether a
- * middleware is an error handler by its arity — `fn.length === 4` — and with
- * three parameters this function was mounted as an ordinary middleware and
- * never ran at all. Every error fell through to Express's own handler, which
- * answers in HTML: the front end, which parses JSON, received a web page.
- * With it, nothing here applied — not the request id, not the masking of
- * 500s in production, not the normalisation below.
+ * `next` est déclaré et inutilisé volontairement. Express décide qu'un
+ * middleware traite les erreurs à son arité — `fn.length === 4` — et avec
+ * trois paramètres, cette fonction était montée comme un middleware ordinaire
+ * et ne tournait jamais. Toutes les erreurs tombaient sur le gestionnaire
+ * interne d'Express, qui répond en HTML : le front, qui analyse du JSON,
+ * recevait une page web. Rien de ce fichier ne s'appliquait — ni le
+ * `requestId`, ni le masquage des 500 en production, ni la normalisation
+ * ci-dessous.
  *
- * Measured on this project's own Express (4.21.2):
- *   3 parameters → 500 text/html, `<!DOCTYPE html>` and a stack trace
- *   4 parameters → 500 application/json, the body written here
+ * Mesuré sur l'Express de ce projet (4.21.2) :
+ *   3 paramètres → 500 text/html, « <!DOCTYPE html> » et une pile d'appels
+ *   4 paramètres → 500 application/json, le corps écrit ici
  *
- * So the parameter stays, whatever a linter thinks of it.
+ * Le paramètre reste donc, quoi qu'en pense un linter.
  */
 export const globalErrorHandler = (
   err: AppError | Error,
@@ -44,11 +45,11 @@ export const globalErrorHandler = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: NextFunction
 ) => {
-  // Normalising first, logging second. The other way round, a CastError — a
-  // malformed id, which is a client mistake and a 400 — was logged at error
-  // level with a full stack trace as though the server had broken, and only
-  // then downgraded to 400 in the response. The logs claimed a crash that
-  // never happened.
+  // Normaliser d'abord, journaliser ensuite. Dans l'autre sens, un CastError
+  // — un identifiant mal formé, soit une faute du client et un 400 — était
+  // journalisé en niveau erreur avec sa pile d'appels comme si le serveur
+  // avait cassé, puis rétrogradé en 400 dans la réponse. Le journal annonçait
+  // un plantage qui n'avait pas eu lieu.
   const { statusCode, message } = normalize(
     err,
     (err as AppError).statusCode || 500,
@@ -63,7 +64,7 @@ export const globalErrorHandler = (
     userId,
     method: req.method,
     url: req.originalUrl,
-    // The body's keys, never its values: a body can carry a credential.
+    // Les clés du corps, jamais ses valeurs : un corps peut porter un secret.
     bodyKeys: req.body ? Object.keys(req.body) : [],
     params: req.params,
   };
@@ -74,7 +75,7 @@ export const globalErrorHandler = (
       stack: err.stack,
     });
   } else if (statusCode === 401 || statusCode === 403) {
-    // Auth failures are worth seeing in production.
+    // Les échecs d'authentification méritent d'être vus en production.
     logger.warn(`🔒 [${requestId}] ${statusCode} ${err.message}`, context);
   } else {
     logger.warn(`⚠️  [${requestId}] ${statusCode} ${err.message}`, context);
@@ -84,8 +85,9 @@ export const globalErrorHandler = (
 
   res.status(statusCode).json({
     status: statusCode >= 500 ? 'error' : 'fail',
-    // In production a 500's detail stays in the logs: it can name a column,
-    // a host or a query. The request id is what ties the two together.
+    // En production, le détail d'une 500 reste dans le journal : il peut
+    // nommer une colonne, un hôte ou une requête. Le `requestId` est ce qui
+    // relie la réponse au journal.
     message:
       isProd && statusCode === 500
         ? 'Une erreur interne est survenue'

@@ -2,26 +2,27 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodType, ZodError } from 'zod';
 
 /**
- * Validate a request — and replace it with what came out.
+ * Valider une requête — et la remplacer par ce qui en est sorti.
  *
- * The previous version parsed and threw the result away. Controllers then
- * read `req.body` raw, so validation judged the request without ever
- * cleaning it, and two things followed from that.
+ * La version précédente analysait puis jetait le résultat. Les contrôleurs
+ * lisaient donc `req.body` brut : la validation jugeait la requête sans jamais
+ * la nettoyer, et deux choses en découlaient.
  *
- * A request could carry anything extra. Zod strips unknown keys, but the
- * stripped copy was discarded: `POST /users` ran `new User(req.body)` with
- * whatever arrived, and since `isAdmin` is declared on the Mongoose schema,
- * any signed-in user could hand themselves the admin flag. Verified, not
- * supposed — the probe answered `isAdmin: true`.
+ * Une requête pouvait porter n'importe quoi en plus. Zod retire les clés
+ * inconnues, mais la copie nettoyée partait à la poubelle : `POST /users`
+ * faisait `new User(req.body)` avec ce qui arrivait, et comme `isAdmin` est
+ * déclaré sur le schéma Mongoose, tout utilisateur connecté pouvait
+ * s'attribuer le drapeau administrateur. Vérifié, pas supposé — la sonde a
+ * répondu `isAdmin: true`.
  *
- * And every `.default()` and `.transform()` in the schemas was dead code.
- * `suggestedDays` carries a transform that de-duplicates and sorts the days,
- * with a comment explaining why it belongs there rather than in the view; it
- * had never run once. Zod produced `[0, 3]` while the controller read
- * `[3, 0, 3]`.
+ * Et chaque `.default()` et `.transform()` des schémas était du code mort.
+ * `suggestedDays` porte un transform qui dédoublonne et trie les jours, avec
+ * un commentaire expliquant pourquoi il a sa place là plutôt qu'à
+ * l'affichage ; il n'avait jamais tourné une fois. Zod produisait `[0, 3]`
+ * pendant que le contrôleur lisait `[3, 0, 3]`.
  *
- * So the validated value is written back. From here on, a controller reading
- * `req.body` reads something that matched a schema.
+ * La valeur validée est donc réécrite. À partir d'ici, un contrôleur qui lit
+ * `req.body` lit quelque chose qui a correspondu à un schéma.
  */
 export const validate =
   (schema: ZodType) =>
@@ -37,8 +38,8 @@ export const validate =
         params?: unknown;
       };
 
-      // Only what the schema described: a schema that says nothing about
-      // `query` must not empty it.
+      // Seulement ce que le schéma a décrit : un schéma qui ne dit rien de
+      // `query` ne doit pas le vider.
       if (parsed.body !== undefined) req.body = parsed.body;
       if (parsed.params !== undefined)
         req.params = parsed.params as typeof req.params;
@@ -51,9 +52,9 @@ export const validate =
         return res.status(400).json({
           status: 'fail',
           errors: error.issues.map((issue) => ({
-            // `path` is ['body', 'email'] or ['params', 'id']: the field is
-            // what follows the section, and the section alone when a whole
-            // object is at fault.
+            // `path` vaut ['body', 'email'] ou ['params', 'id'] : le champ
+            // est ce qui suit la section, et la section seule quand c'est
+            // l'objet entier qui est en cause.
             field:
               issue.path.length > 1
                 ? issue.path.slice(1).join('.')

@@ -1,30 +1,31 @@
 import { z } from 'zod';
 
 /**
- * An identifier in the URL.
+ * Un identifiant dans l'URL.
  *
- * Nothing validated route parameters at all: `:id` went straight to Mongoose,
- * and a malformed one came back as a CastError — a 500 in the logs until the
- * error handler was fixed, and a database round trip either way for a request
- * that could never have matched anything.
+ * Rien ne validait les paramètres de route : `:id` partait directement chez
+ * Mongoose, et un identifiant mal formé revenait en CastError — un 500 dans le
+ * journal tant que le gestionnaire d'erreurs n'était pas réparé, et dans tous
+ * les cas un aller-retour en base pour une requête qui ne pouvait correspondre
+ * à rien.
  *
- * 24 hexadecimal characters is what an ObjectId is. Checking it here means
- * the answer is a 400 that names the field, before any query runs.
+ * Vingt-quatre caractères hexadécimaux, c'est ce qu'est un ObjectId. Le
+ * vérifier ici donne un 400 qui nomme le champ, avant toute requête.
  */
 export const objectId = z
   .string()
   .regex(/^[0-9a-fA-F]{24}$/, "L'identifiant n'est pas valide");
 
-/** `:id` — the usual spelling. */
+/** `:id` — la graphie habituelle. */
 export const idParamSchema = z.object({
   params: z.object({ id: objectId }),
 });
 
 /**
- * Both a body and a `:clientId`, for the routes that carry the two.
+ * Un corps ET un `:clientId`, pour les routes qui portent les deux.
  *
- * Zod schemas do not merge across the `body`/`params` split on their own, so
- * a route with both needs them stated together.
+ * Les schémas Zod ne se fusionnent pas d'eux-mêmes par-dessus la séparation
+ * `body` / `params` : une route qui a les deux doit les déclarer ensemble.
  */
 export const withClientIdParam = <T extends z.ZodTypeAny>(body: T) =>
   z.object({
