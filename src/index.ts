@@ -1,25 +1,25 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import connectDB from './config/db';
-import routes from './routes/index';
+import connectDB from './shared/config/db';
+import routes from './routes';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
-import authRoutes from './routes/auth';
+import authRoutes from './modules/auth/auth.routes';
 import MongoStore from 'connect-mongo';
 import helmet from 'helmet';
-import { globalLimiter } from './middleware/rateLimits';
-import { globalErrorHandler } from './middleware/errorHandler';
-import { httpLogger } from './middleware/httpLogger';
+import { globalLimiter } from './shared/middleware/rateLimits';
+import { globalErrorHandler } from './shared/middleware/errorHandler';
+import { httpLogger } from './shared/middleware/httpLogger';
 import mongoSanitize from 'express-mongo-sanitize';
 import mongoose from 'mongoose';
-import logger from './utils/logger';
-import { errorMessage } from './utils/unknownError';
+import logger from './shared/utils/logger';
+import { errorMessage } from './shared/utils/unknownError';
 
 dotenv.config();
 
-import { validateEnv } from './config/env';
-import { AppError } from './utils/AppError';
+import { validateEnv } from './shared/config/env';
+import { AppError } from './shared/utils/AppError';
 validateEnv();
 
 const app = express();

@@ -1,12 +1,12 @@
 import axios from 'axios';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { Types } from 'mongoose';
-import User, { IUser } from '../models/User';
-import Client from '../models/Client';
-import InvitationToken from '../models/InvitationToken';
-import { AppError } from '../utils/AppError';
-import logger from '../utils/logger';
-import { errorMessage, httpErrorBody } from '../utils/unknownError';
+import User, { IUser } from '../../models/User';
+import Client from '../../models/Client';
+import InvitationToken from '../../models/InvitationToken';
+import { AppError } from '../../shared/utils/AppError';
+import logger from '../../shared/utils/logger';
+import { errorMessage, httpErrorBody } from '../../shared/utils/unknownError';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 

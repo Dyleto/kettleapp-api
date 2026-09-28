@@ -1,9 +1,9 @@
 import express from 'express';
-import coachRoutes from './coach';
-import adminRoutes from './admin';
-import clientRoutes from './client';
-import accountRoutes from './account';
-import { authMiddleware } from '../middleware/auth';
+import coachRoutes from './modules/coach/coach.routes';
+import adminRoutes from './modules/admin/admin.routes';
+import clientRoutes from './modules/client/client.routes';
+import accountRoutes from './modules/account/account.routes';
+import { authMiddleware } from './shared/middleware/auth';
 
 const router = express.Router();
 

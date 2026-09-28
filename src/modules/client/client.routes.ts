@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { requireClient } from '../middleware/roles';
-import { validate } from '../middleware/validate';
+import { requireClient } from '../../shared/middleware/roles';
+import { validate } from '../../shared/middleware/validate';
 import {
   completeSessionSchema,
   updateCompletedSessionSchema,
-} from '../schemas/clientSchema';
-import * as clientController from '../controllers/clientController';
+} from './client.schema';
+import * as clientController from './client.controller';
 
 const router = Router();
 

@@ -1,5 +1,5 @@
-import { IExercise } from '../models/Exercise';
-import { ISessionBlock } from '../models/Session';
+import { IExercise } from '../../models/Exercise';
+import { ISessionBlock } from '../../models/Session';
 
 type PopulatedBlockExercise = {
   exerciseId: IExercise;

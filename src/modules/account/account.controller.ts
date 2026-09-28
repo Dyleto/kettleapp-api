@@ -1,18 +1,18 @@
 import { Request, Response } from 'express';
 import mongoose, { Types } from 'mongoose';
-import User, { IUser } from '../models/User';
-import Coach from '../models/Coach';
-import Client from '../models/Client';
-import Program from '../models/Program';
-import Session from '../models/Session';
-import CompletedSession from '../models/CompletedSession';
-import Exercise from '../models/Exercise';
-import InvitationToken from '../models/InvitationToken';
-import { catchAsync } from '../utils/catchAsync';
-import { AppError } from '../utils/AppError';
-import logger from '../utils/logger';
-import { getErrorMessage } from '../utils/errors';
-import { PORTE_DES_DONNEES_DE_SANTE } from './clientController';
+import User, { IUser } from '../../models/User';
+import Coach from '../../models/Coach';
+import Client from '../../models/Client';
+import Program from '../../models/Program';
+import Session from '../../models/Session';
+import CompletedSession from '../../models/CompletedSession';
+import Exercise from '../../models/Exercise';
+import InvitationToken from '../../models/InvitationToken';
+import { catchAsync } from '../../shared/utils/catchAsync';
+import { AppError } from '../../shared/utils/AppError';
+import logger from '../../shared/utils/logger';
+import { getErrorMessage } from '../../shared/utils/errors';
+import { PORTE_DES_DONNEES_DE_SANTE } from '../client/client.controller';
 
 // GET /api/account
 //

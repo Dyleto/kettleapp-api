@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
-import User from '../models/User';
-import Coach from '../models/Coach';
-import Client from '../models/Client';
-import Exercise from '../models/Exercise';
-import CompletedSession from '../models/CompletedSession';
-import { catchAsync } from '../utils/catchAsync';
-import { AppError } from '../utils/AppError';
-import logger from '../utils/logger';
+import User from '../../models/User';
+import Coach from '../../models/Coach';
+import Client from '../../models/Client';
+import Exercise from '../../models/Exercise';
+import CompletedSession from '../../models/CompletedSession';
+import { catchAsync } from '../../shared/utils/catchAsync';
+import { AppError } from '../../shared/utils/AppError';
+import logger from '../../shared/utils/logger';
 
 export const createCoach = catchAsync(async (req: Request, res: Response) => {
   const { email, firstName, lastName } = req.body;

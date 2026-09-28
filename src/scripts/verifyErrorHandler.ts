@@ -17,10 +17,10 @@
  */
 import express from 'express';
 import type { AddressInfo } from 'node:net';
-import { globalErrorHandler } from '../middleware/errorHandler';
-import { AppError } from '../utils/AppError';
-import { catchAsync } from '../utils/catchAsync';
-import logger from '../utils/logger';
+import { globalErrorHandler } from '../shared/middleware/errorHandler';
+import { AppError } from '../shared/utils/AppError';
+import { catchAsync } from '../shared/utils/catchAsync';
+import logger from '../shared/utils/logger';
 
 let failures = 0;
 const ok = (label: string, cond: boolean, extra = '') => {

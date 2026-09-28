@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import Program, { IProgram } from '../models/Program';
+import Program, { IProgram } from '../../models/Program';
 
 export const getOrCreate = async (
   clientId: Types.ObjectId

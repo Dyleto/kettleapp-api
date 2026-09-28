@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import type { ICoach } from '../models/Coach';
-import type { IClient } from '../models/Client';
-import User from '../models/User';
-import Coach from '../models/Coach';
-import Client from '../models/Client';
+import type { ICoach } from '../../models/Coach';
+import type { IClient } from '../../models/Client';
+import User from '../../models/User';
+import Coach from '../../models/Coach';
+import Client from '../../models/Client';
 import { AppError } from '../utils/AppError';
 import { catchAsync } from '../utils/catchAsync';
 import logger from '../utils/logger';

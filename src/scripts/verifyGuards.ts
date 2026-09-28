@@ -16,10 +16,10 @@
  */
 import express from 'express';
 import type { AddressInfo } from 'node:net';
-import { globalErrorHandler } from '../middleware/errorHandler';
-import { coachOf, clientOf } from '../middleware/roles';
-import { catchAsync } from '../utils/catchAsync';
-import logger from '../utils/logger';
+import { globalErrorHandler } from '../shared/middleware/errorHandler';
+import { coachOf, clientOf } from '../shared/middleware/roles';
+import { catchAsync } from '../shared/utils/catchAsync';
+import logger from '../shared/utils/logger';
 
 logger.transports.forEach((t) => (t.silent = true));
 

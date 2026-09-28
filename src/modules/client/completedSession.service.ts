@@ -1,4 +1,4 @@
-import { IPerformed, IPerformedSet } from '../models/CompletedSession';
+import { IPerformed, IPerformedSet } from '../../models/CompletedSession';
 
 // Ce que le client envoie pour un exercice donné : la liste complète de ses
 // séries. Elle remplace le réalisé enregistré, `[]` l'efface.

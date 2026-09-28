@@ -20,7 +20,7 @@ import Client from '../models/Client';
 import Program from '../models/Program';
 import Session from '../models/Session';
 import Exercise from '../models/Exercise';
-import { copySessionToClient } from '../controllers/coachController';
+import { copySessionToClient } from '../modules/coach/coach.controller';
 
 const main = async () => {
   let vert = 0;

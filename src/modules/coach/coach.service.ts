@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
-import Client, { IClient } from '../models/Client';
-import { AppError } from '../utils/AppError';
+import Client, { IClient } from '../../models/Client';
+import { AppError } from '../../shared/utils/AppError';
 
 export const getAuthorizedClient = async (
   coachId: Types.ObjectId,

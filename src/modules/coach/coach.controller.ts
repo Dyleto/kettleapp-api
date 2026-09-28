@@ -1,20 +1,23 @@
 import { Request, Response } from 'express';
-import { catchAsync } from '../utils/catchAsync';
-import { AppError } from '../utils/AppError';
-import { coachOf } from '../middleware/roles';
-import InvitationToken from '../models/InvitationToken';
-import Client from '../models/Client';
-import Exercise from '../models/Exercise';
-import { IUser } from '../models/User';
-import Session from '../models/Session';
+import { catchAsync } from '../../shared/utils/catchAsync';
+import { AppError } from '../../shared/utils/AppError';
+import { coachOf } from '../../shared/middleware/roles';
+import InvitationToken from '../../models/InvitationToken';
+import Client from '../../models/Client';
+import Exercise from '../../models/Exercise';
+import { IUser } from '../../models/User';
+import Session from '../../models/Session';
 import mongoose, { isValidObjectId, Types } from 'mongoose';
-import CompletedSession from '../models/CompletedSession';
-import { getAuthorizedClient } from '../services/coachService';
-import type { SessionInput } from '../schemas/programSchema';
-import { getOrCreate } from '../services/programService';
-import logger from '../utils/logger';
-import { PopulatedSession, formatSession } from '../utils/sessionFormatter';
-import { getErrorMessage } from '../utils/errors';
+import CompletedSession from '../../models/CompletedSession';
+import { getAuthorizedClient } from './coach.service';
+import type { SessionInput } from '../program/program.schema';
+import { getOrCreate } from '../program/program.service';
+import logger from '../../shared/utils/logger';
+import {
+  PopulatedSession,
+  formatSession,
+} from '../../shared/utils/sessionFormatter';
+import { getErrorMessage } from '../../shared/utils/errors';
 
 // --------------------------------------------------------------------------
 // INVITATIONS

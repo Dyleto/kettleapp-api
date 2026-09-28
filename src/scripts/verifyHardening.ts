@@ -18,9 +18,9 @@
  */
 import express from 'express';
 import type { AddressInfo } from 'node:net';
-import { globalErrorHandler } from '../middleware/errorHandler';
-import { makeLimiter } from '../middleware/rateLimits';
-import logger from '../utils/logger';
+import { globalErrorHandler } from '../shared/middleware/errorHandler';
+import { makeLimiter } from '../shared/middleware/rateLimits';
+import logger from '../shared/utils/logger';
 
 logger.transports.forEach((t) => (t.silent = true));
 

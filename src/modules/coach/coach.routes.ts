@@ -1,18 +1,21 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { requireCoach } from '../middleware/roles';
-import * as coachController from '../controllers/coachController';
-import { validate } from '../middleware/validate';
-import { invitationLimiter } from '../middleware/rateLimits';
-import { idParamSchema, withClientIdParam } from '../schemas/paramsSchema';
+import { requireCoach } from '../../shared/middleware/roles';
+import * as coachController from './coach.controller';
+import { validate } from '../../shared/middleware/validate';
+import { invitationLimiter } from '../../shared/middleware/rateLimits';
+import {
+  idParamSchema,
+  withClientIdParam,
+} from '../../shared/schemas/params.schema';
 import {
   createExerciseSchema,
   updateExerciseSchema,
-} from '../schemas/exerciseSchema';
+} from '../exercise/exercise.schema';
 import {
   copySessionSchema,
   updateProgramSessionsSchema,
-} from '../schemas/programSchema';
+} from '../program/program.schema';
 
 const router = Router();
 

@@ -6,7 +6,7 @@
  *
  *     npm run verify:rounds
  */
-import { applyRoundsDone } from '../services/completedSessionService';
+import { applyRoundsDone } from '../modules/client/completedSession.service';
 
 let echecs = 0;
 const ok = (libelle: string, condition: boolean, preuve = '') => {

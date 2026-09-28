@@ -1,5 +1,5 @@
 import { model, Schema, Types, Document } from 'mongoose';
-import { FEEDBACK_TAGS, FeedbackTag } from '../constants/feedback';
+import { FEEDBACK_TAGS, FeedbackTag } from '../shared/constants/feedback';
 
 // Ce que le client a réellement fait, à côté de la prescription.
 // Une clé absente = non renseignée. On n'écrit jamais 0 pour dire "rien".

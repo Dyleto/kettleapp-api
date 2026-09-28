@@ -1,19 +1,19 @@
 import { Request, Response } from 'express';
-import { catchAsync } from '../utils/catchAsync';
-import { AppError } from '../utils/AppError';
-import type { IClient } from '../models/Client';
-import { clientOf } from '../middleware/roles';
-import Program from '../models/Program';
-import Session from '../models/Session';
-import CompletedSession from '../models/CompletedSession';
-import { getOrCreate } from '../services/programService';
-import logger from '../utils/logger';
-import { formatSession, PopulatedSession } from '../utils/sessionFormatter';
-import { HEALTH_CONSENT_VERSION } from '../constants/consent';
+import { catchAsync } from '../../shared/utils/catchAsync';
+import { AppError } from '../../shared/utils/AppError';
+import type { IClient } from '../../models/Client';
+import { clientOf } from '../../shared/middleware/roles';
+import Program from '../../models/Program';
+import Session from '../../models/Session';
+import CompletedSession from '../../models/CompletedSession';
+import { getOrCreate } from '../program/program.service';
+import logger from '../../shared/utils/logger';
 import {
-  applyPerformed,
-  applyRoundsDone,
-} from '../services/completedSessionService';
+  formatSession,
+  PopulatedSession,
+} from '../../shared/utils/sessionFormatter';
+import { HEALTH_CONSENT_VERSION } from '../../shared/constants/consent';
+import { applyPerformed, applyRoundsDone } from './completedSession.service';
 import { isValidObjectId } from 'mongoose';
 
 // GET /api/client/program

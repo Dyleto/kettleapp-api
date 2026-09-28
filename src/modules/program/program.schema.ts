@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BLOCK_TYPES } from '../models/Session';
+import { BLOCK_TYPES } from '../../models/Session';
 
 /**
  * No `.default(0)` on what the coach may simply not have set.

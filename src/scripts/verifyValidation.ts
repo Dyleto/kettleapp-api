@@ -24,12 +24,12 @@
 import express from 'express';
 import type { AddressInfo } from 'node:net';
 import { z } from 'zod';
-import { globalErrorHandler } from '../middleware/errorHandler';
-import { validate } from '../middleware/validate';
-import { idParamSchema } from '../schemas/paramsSchema';
-import { updateProgramSessionsSchema } from '../schemas/programSchema';
-import { createExerciseSchema } from '../schemas/exerciseSchema';
-import logger from '../utils/logger';
+import { globalErrorHandler } from '../shared/middleware/errorHandler';
+import { validate } from '../shared/middleware/validate';
+import { idParamSchema } from '../shared/schemas/params.schema';
+import { updateProgramSessionsSchema } from '../modules/program/program.schema';
+import { createExerciseSchema } from '../modules/exercise/exercise.schema';
+import logger from '../shared/utils/logger';
 
 logger.transports.forEach((t) => (t.silent = true));
 

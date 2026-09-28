@@ -1,7 +1,7 @@
-import { IUser } from '../models/User';
-import Coach from '../models/Coach';
-import Client from '../models/Client';
-import { HEALTH_CONSENT_VERSION } from '../constants/consent';
+import { IUser } from '../../models/User';
+import Coach from '../../models/Coach';
+import Client from '../../models/Client';
+import { HEALTH_CONSENT_VERSION } from '../../shared/constants/consent';
 
 export const buildUser = async (user: IUser) => {
   const [coach, client] = await Promise.all([

@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { validate } from '../middleware/validate';
-import { authLimiter } from '../middleware/rateLimits';
-import { googleAuthSchema } from '../schemas/authSchema';
+import { validate } from '../../shared/middleware/validate';
+import { authLimiter } from '../../shared/middleware/rateLimits';
+import { googleAuthSchema } from './auth.schema';
 import {
   googleAuthCallback,
   googleOneTapCallback,
@@ -9,7 +9,7 @@ import {
   logout,
   verifyInviteToken,
   devLogin,
-} from '../controllers/authController';
+} from './auth.controller';
 
 const router = Router();
 

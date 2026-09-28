@@ -1,5 +1,5 @@
 ﻿import { z } from 'zod';
-import { FEEDBACK_TAGS } from '../constants/feedback';
+import { FEEDBACK_TAGS } from '../../shared/constants/feedback';
 
 // Legacy : ancien bilan en 5 axes. Encore accepté le temps que le front
 // bascule sur `feedback`, jamais exigé.

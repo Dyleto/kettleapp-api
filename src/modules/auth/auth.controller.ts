@@ -1,21 +1,21 @@
 import { Request, Response } from 'express';
 import { Types } from 'mongoose';
-import User from '../models/User';
-import Coach from '../models/Coach';
-import { IUser } from '../models/User';
-import { catchAsync } from '../utils/catchAsync';
-import { AppError } from '../utils/AppError';
-import { buildUser } from '../services/userService';
+import User from '../../models/User';
+import Coach from '../../models/Coach';
+import { IUser } from '../../models/User';
+import { catchAsync } from '../../shared/utils/catchAsync';
+import { AppError } from '../../shared/utils/AppError';
+import { buildUser } from '../user/user.service';
 import {
   exchangeGoogleCode,
   verifyGoogleCredential,
   findOrCreateUser,
   linkClientToCoach,
   validateInvitationToken,
-} from '../services/authService';
-import logger from '../utils/logger';
+} from './auth.service';
+import logger from '../../shared/utils/logger';
 import { TokenPayload } from 'google-auth-library';
-import { getErrorMessage } from '../utils/errors';
+import { getErrorMessage } from '../../shared/utils/errors';
 
 // ─── Google OAuth (code flow) ─────────────────────────────────────────────────
 
