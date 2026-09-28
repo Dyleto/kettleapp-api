@@ -20,6 +20,14 @@ interface ProgramUpdatedEmailProps {
   isNew: boolean; // true = nouvelle séance ajoutée, false = modification
 }
 
+/**
+ * Le message envoyé au client quand son coach touche à son programme.
+ *
+ * `isNew` distingue l'ajout d'une séance de la modification d'une existante,
+ * parce que les deux n'appellent pas la même chose : l'une donne envie
+ * d'ouvrir l'application, l'autre demande surtout de ne pas s'entraîner sur
+ * une version périmée.
+ */
 export const ProgramUpdatedEmail = ({
   clientFirstName,
   coachFirstName,

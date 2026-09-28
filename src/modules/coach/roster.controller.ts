@@ -12,6 +12,18 @@ import {
   formatSession,
 } from '../../shared/utils/sessionFormatter';
 
+/**
+ * La liste des clients d'un coach, avec de quoi la trier.
+ *
+ * Tout se fait en une agrégation plutôt qu'en une requête par client : la
+ * liste s'ouvre à chaque passage dans l'espace coach, et une centaine de
+ * requêtes pour une vingtaine de clients se paierait à chaque fois.
+ *
+ * Ce que chaque ligne porte n'est pas décoratif. Les bilans non lus et la date
+ * de la dernière séance sont ce qui permet de classer par « à traiter » — sans
+ * eux, le coach doit ouvrir chaque fiche pour savoir laquelle demande son
+ * attention, ce qui est précisément le travail qu'on veut lui éviter.
+ */
 export const getClients = catchAsync(async (req: Request, res: Response) => {
   const coach = coachOf(res);
 
@@ -99,6 +111,17 @@ export const getClients = catchAsync(async (req: Request, res: Response) => {
   res.status(200).json(clients);
 });
 
+/**
+ * Tout ce qu'il faut pour ouvrir l'atelier d'un client.
+ *
+ * Le programme est créé s'il n'existe pas : un client sans programme et un
+ * programme vide sont la même chose pour un coach, et faire remonter la
+ * différence obligerait l'écran à traiter un cas qui ne veut rien dire.
+ *
+ * `unseenCount` voyage avec le reste plutôt que par un appel séparé — c'est
+ * l'information qui décide si la pastille du journal s'allume, et la demander
+ * à part ferait clignoter cette pastille à chaque ouverture.
+ */
 export const getClientDetails = catchAsync(
   async (req: Request, res: Response) => {
     const coach = coachOf(res);
@@ -138,6 +161,15 @@ export const getClientDetails = catchAsync(
   }
 );
 
+/**
+ * Les séances déjà faites par un client, de la plus récente à la plus ancienne.
+ *
+ * La pagination est plafonnée à 200 même si l'appelant demande plus : un
+ * client qui s'entraîne depuis deux ans a des centaines de bilans, chacun
+ * portant l'instantané complet de sa séance. Sans plafond, une seule requête
+ * ramènerait plusieurs mégaoctets — et le plafond doit vivre ici, le client
+ * n'ayant aucune raison d'être poli.
+ */
 export const getClientHistory = catchAsync(
   async (req: Request, res: Response) => {
     const coach = coachOf(res);
@@ -157,6 +189,14 @@ export const getClientHistory = catchAsync(
   }
 );
 
+/**
+ * Marquer comme lus les bilans d'un client.
+ *
+ * L'autorisation est demandée pour son effet, pas pour sa valeur : sans le
+ * `getAuthorizedClient`, connaître un identifiant suffirait à éteindre les
+ * pastilles d'un coach qui n'est pas soi. C'est le genre d'appel dont
+ * l'innocuité apparente fait oublier qu'il écrit.
+ */
 export const markHistoryAsViewed = catchAsync(
   async (req: Request, res: Response) => {
     const coach = coachOf(res);

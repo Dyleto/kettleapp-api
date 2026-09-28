@@ -13,6 +13,13 @@ export type BlockType =
   | 'pyramid'
   | 'ladder';
 
+/**
+ * Les formats de bloc, en une liste que Mongoose et Zod partagent.
+ *
+ * Écrire l'énumération deux fois — une pour le type, une pour la validation —
+ * les ferait diverger au premier format ajouté, et le symptôme serait un bloc
+ * que le coach peut créer mais que l'API refuse.
+ */
 export const BLOCK_TYPES: BlockType[] = [
   'warmup',
   'emom',

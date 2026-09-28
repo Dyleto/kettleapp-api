@@ -19,6 +19,17 @@ interface ClientJoinedEmailProps {
   clientEmail: string;
 }
 
+/**
+ * Le message envoyé au coach quand un client rejoint son suivi.
+ *
+ * C'est le seul signal qu'il reçoive : rien ne le prévient autrement qu'un
+ * lien d'invitation a été utilisé, et sans ce message il découvrirait le
+ * nouveau client au hasard d'une ouverture de sa liste.
+ *
+ * Écrit en composants React Email plutôt qu'en HTML à la main parce que les
+ * clients de messagerie ne s'accordent sur rien : la mise en page passe par des
+ * tableaux et des styles en ligne, que ces composants produisent correctement.
+ */
 export const ClientJoinedEmail = ({
   coachFirstName,
   clientFirstName,

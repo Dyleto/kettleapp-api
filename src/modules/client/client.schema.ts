@@ -52,6 +52,19 @@ const pastDate = z.coerce.date().refine((date) => date <= new Date(), {
   message: 'La date de complétion ne peut pas être dans le futur',
 });
 
+/**
+ * Ce qu'on accepte à la fin d'une séance.
+ *
+ * Le ressenti est le seul champ obligatoire, et le `refine` accepte aussi
+ * `metrics` — l'ancien bilan à cinq axes — pour ne pas refuser les envois d'une
+ * application qui n'aurait pas encore été rechargée. Sans cette tolérance, une
+ * séance terminée sur un onglet ouvert depuis la veille serait perdue au
+ * moment précis où l'on demande à la personne son effort.
+ *
+ * `completedAt` ne peut pas être dans le futur : la date se saisit à la main
+ * quand la séance a eu lieu un autre jour, et une faute de frappe placerait
+ * sinon la séance en tête de l'historique pour toujours.
+ */
 export const completeSessionSchema = z.object({
   params: z.object({
     sessionId: z.string().min(1),
@@ -74,6 +87,14 @@ export const completeSessionSchema = z.object({
     ),
 });
 
+/**
+ * Corriger un bilan déjà envoyé.
+ *
+ * Tout est facultatif : on corrige une charge mal saisie, pas la séance
+ * entière. La liste de séries d'un exercice part cependant complète — elle
+ * remplace celle enregistrée, et un tableau vide l'efface. C'est l'absence de
+ * l'exercice dans le corps qui veut dire « n'y touche pas ».
+ */
 export const updateCompletedSessionSchema = z.object({
   params: z.object({
     id: z.string().min(1),

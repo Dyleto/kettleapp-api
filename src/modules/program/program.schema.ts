@@ -65,6 +65,15 @@ const sessionInputSchema = z.object({
   blocks: z.array(sessionBlockSchema).max(20),
 });
 
+/**
+ * Le programme entier, tel que l'atelier l'envoie.
+ *
+ * Ce n'est pas une liste de modifications mais l'état complet : ce qui n'y
+ * figure plus a été supprimé. Les plafonds — trente séances, vingt blocs,
+ * trente exercices — ne sont pas des limites de produit mais de dégât : ils
+ * bornent ce qu'un appel forgé peut faire écrire, bien au-delà de ce qu'un
+ * coach construit réellement.
+ */
 export const updateProgramSessionsSchema = z.object({
   body: z.object({
     sessions: z.array(sessionInputSchema).max(30),
