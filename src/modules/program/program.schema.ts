@@ -2,14 +2,14 @@ import { z } from 'zod';
 import { BLOCK_TYPES } from '../../models/Session';
 
 /**
- * No `.default(0)` on what the coach may simply not have set.
+ * Pas de `.default(0)` sur ce que le coach peut simplement ne pas avoir réglé.
  *
- * Zero and absent are two different statements — "zero repetitions" is not
- * "no repetitions prescribed" — and the codebase already says so of recorded
- * values: "a missing key means 'not filled in' — never zero". The defaults
- * were harmless only because they never ran: the validated value was
- * discarded. Now that it is written back, they would start filling the
- * database with zeroes nobody typed.
+ * Zéro et absent sont deux affirmations différentes — « zéro répétition »
+ * n'est pas « aucune répétition prescrite » — et le code le dit déjà des
+ * valeurs réalisées : une clé manquante veut dire « pas renseigné », jamais
+ * zéro. Ces défauts n'étaient inoffensifs que parce qu'ils ne tournaient
+ * pas : la valeur validée était jetée. Maintenant qu'elle est réécrite, ils
+ * rempliraient la base de zéros que personne n'a tapés.
  */
 const blockExerciseSchema = z.object({
   exerciseId: z.string().min(1),
@@ -72,13 +72,12 @@ export const updateProgramSessionsSchema = z.object({
 });
 
 /**
- * One session, as it arrives — described once.
+ * Une séance telle qu'elle arrive — décrite une seule fois.
  *
- * The controller carried its own hand-written `SessionInput` declared in the
- * middle of a function, listing the same fields with `blocks?: unknown`. Two
- * descriptions of one payload drift apart in silence: the schema gains a
- * field, the type does not, and nothing says so. Deriving it means the
- * schema is the only place the shape is written.
+ * Le contrôleur portait son propre `SessionInput` écrit à la main au milieu
+ * d'une fonction, listant les mêmes champs avec `blocks?: unknown`. Deux
+ * descriptions d'une même charge utile divergent en silence : le schéma gagne
+ * un champ, le type non, et rien ne le dit.
  */
 export type SessionInput = z.infer<typeof sessionInputSchema>;
 

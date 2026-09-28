@@ -49,20 +49,21 @@ app.use(mongoSanitize());
 
 app.use(httpLogger);
 
-// The quota comes after the session so it can count per user rather than per
-// address — see `middleware/rateLimits.ts` for why that matters.
+// Le quota vient après la session pour pouvoir compter par utilisateur plutôt
+// que par adresse — voir `shared/middleware/rateLimits.ts` pour le pourquoi.
 app.use(cookieParser());
 
 /**
- * How large a body may be.
+ * Quelle taille un corps de requête peut atteindre.
  *
- * `express.json()` already defaults to 100 kb, so the limit existed — it was
- * just implicit, and too low for the one request that can legitimately grow:
- * the editor sends the whole programme on every save. Measured, five sessions
- * of nine blocks and eighteen exercises weigh 5.4 kb, so a programme twenty
- * times that size reaches 107 kb and the save would fail on a ceiling nobody
- * chose. 256 kb leaves some forty times the test programme and still refuses
- * an arbitrary body.
+ * `express.json()` applique déjà un défaut de 100 Ko : la limite existait, elle
+ * était seulement implicite — et trop basse pour la seule requête qui peut
+ * légitimement grossir, l'atelier envoyant le programme entier à chaque
+ * enregistrement. Mesuré, cinq séances de neuf blocs et dix-huit exercices
+ * pèsent 5,4 Ko ; un programme vingt fois plus chargé atteint donc 107 Ko et
+ * l'enregistrement échouerait sur un plafond que personne n'a choisi. 256 Ko
+ * laisse une quarantaine de fois le programme d'essai et refuse toujours un
+ * corps arbitraire.
  */
 app.use(express.json({ limit: '256kb' }));
 
@@ -110,18 +111,19 @@ app.use(globalErrorHandler);
 const PORT = process.env.PORT || 3000;
 
 /**
- * Starting, and stopping.
+ * Démarrer, et s'arrêter.
  *
- * `connectDB().then(...)` carried no `.catch()`: a database that refused the
- * connection produced an unhandled rejection and a process that stayed alive
- * with no server listening — up, healthy to anything watching the process,
- * and answering nothing. A failure to start has to be a failure to start.
+ * `connectDB().then(...)` ne portait pas de `.catch()` : une base qui refusait
+ * la connexion produisait une rejection non gérée et un process bien vivant,
+ * sans serveur à l'écoute — debout, sain pour tout ce qui surveille le
+ * process, et ne répondant à rien. Un échec au démarrage doit être un échec au
+ * démarrage.
  *
- * And a stop has to finish what it began. Without this, a deploy's SIGTERM
- * killed the process mid-request: the client saw a socket close with no
- * status, and a write already sent to Mongo had no idea whether its answer
- * ever arrived. We stop accepting, we let what is in flight finish, and only
- * then we close the connection.
+ * Et un arrêt doit finir ce qu'il a commencé. Sans ça, le SIGTERM d'un
+ * déploiement tuait le process en pleine requête : le client voyait une socket
+ * se fermer sans statut, et une écriture déjà partie chez Mongo ne savait pas
+ * si sa réponse était arrivée. On cesse d'accepter, on laisse finir ce qui est
+ * en vol, puis seulement on ferme la connexion.
  */
 const start = async () => {
   try {
@@ -142,7 +144,8 @@ const start = async () => {
     server.close(() => {
       void mongoose.connection.close(false).then(() => process.exit(0));
     });
-    // A request that never finishes must not hold the deploy hostage.
+    // Une requête qui ne finit jamais ne doit pas prendre le déploiement en
+    // otage.
     setTimeout(() => {
       logger.error("Arrêt forcé : une requête n'a pas rendu la main à temps");
       process.exit(1);

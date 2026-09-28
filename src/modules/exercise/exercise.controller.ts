@@ -7,9 +7,19 @@ import Exercise from '../../models/Exercise';
 import Session from '../../models/Session';
 import { Types } from 'mongoose';
 
-// Nombre de séances du coach dans lesquelles chaque exercice apparaît.
-// La chaîne part de Client (index coaches.coachId) puis suit programs.clientId
-// et sessions.programId, tous deux indexés.
+/**
+ * Dans combien de séances du coach chaque exercice apparaît.
+ *
+ * Ce compteur est ce qui rend la bibliothèque utilisable : sans lui, rien ne
+ * distingue l'exercice qu'on place à chaque séance de celui qu'on a créé par
+ * erreur il y a six mois — et c'est justement celui-là qu'on veut pouvoir
+ * supprimer.
+ *
+ * La chaîne part de Client (index `coaches.coachId`) puis suit
+ * `programs.clientId` et `sessions.programId`, tous deux indexés. Elle coûte
+ * néanmoins une agrégation complète à chaque ouverture de la bibliothèque :
+ * si le coût devient sensible, c'est ici qu'il faudra un cache, pas ailleurs.
+ */
 const getExerciseUsage = async (
   coachId: Types.ObjectId
 ): Promise<Map<string, number>> => {
@@ -49,6 +59,12 @@ const getExerciseUsage = async (
   return new Map(rows.map((row) => [String(row._id), row.count]));
 };
 
+/**
+ * La bibliothèque du coach, chaque exercice avec son nombre d'usages.
+ *
+ * Les deux requêtes partent ensemble : le compteur ne dépend pas de la liste,
+ * et les enchaîner doublerait l'attente pour rien.
+ */
 export const getExercises = catchAsync(async (req: Request, res: Response) => {
   const coach = coachOf(res);
 
@@ -65,6 +81,13 @@ export const getExercises = catchAsync(async (req: Request, res: Response) => {
   );
 });
 
+/**
+ * Un exercice, à condition qu'il appartienne à ce coach.
+ *
+ * Le `createdBy` fait partie du filtre et non d'un contrôle après coup : un
+ * exercice qui n'est pas le sien doit être introuvable, pas refusé — répondre
+ * 403 confirmerait son existence.
+ */
 export const getExerciseDetails = catchAsync(
   async (req: Request, res: Response) => {
     const coach = coachOf(res);
@@ -77,6 +100,14 @@ export const getExerciseDetails = catchAsync(
   }
 );
 
+/**
+ * Créer un exercice dans la bibliothèque du coach.
+ *
+ * `|| ''` plutôt que de laisser le champ absent : la fiche affiche une
+ * description et une vidéo, et le front distingue mal « jamais renseigné » de
+ * « effacé ». La chaîne vide dit les deux de la même façon, ce qui est ici la
+ * bonne réponse.
+ */
 export const createExercise = catchAsync(
   async (req: Request, res: Response) => {
     const coach = coachOf(res);
@@ -93,6 +124,14 @@ export const createExercise = catchAsync(
   }
 );
 
+/**
+ * Modifier un exercice de sa propre bibliothèque.
+ *
+ * Le nom se teste par `if (name)` — une chaîne vide ne vaut pas effacement,
+ * un exercice sans nom n'existe pas — alors que description et vidéo se
+ * testent par `!== undefined`, parce que les vider est une intention
+ * légitime. La différence est voulue.
+ */
 export const updateExercise = catchAsync(
   async (req: Request, res: Response) => {
     const coach = coachOf(res);
@@ -112,6 +151,15 @@ export const updateExercise = catchAsync(
   }
 );
 
+/**
+ * Supprimer un exercice, sauf s'il sert encore.
+ *
+ * Le supprimer alors qu'une séance le contient laisserait cette séance
+ * pointer vers rien : le client ouvrirait son programme sur un bloc dont un
+ * mouvement a disparu, sans que personne ait touché à son programme. On
+ * refuse, plutôt que de nettoyer les séances derrière — ce serait modifier le
+ * travail du coach sans le lui demander.
+ */
 export const deleteExercise = catchAsync(
   async (req: Request, res: Response) => {
     const coach = coachOf(res);
