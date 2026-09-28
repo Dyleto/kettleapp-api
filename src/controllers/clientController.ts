@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError } from '../utils/AppError';
-import { IClient } from '../models/Client';
+import type { IClient } from '../models/Client';
+import { clientOf } from '../middleware/roles';
 import Program from '../models/Program';
 import Session from '../models/Session';
 import CompletedSession from '../models/CompletedSession';
@@ -17,7 +18,7 @@ import { isValidObjectId } from 'mongoose';
 
 // GET /api/client/program
 export const getProgram = catchAsync(async (req: Request, res: Response) => {
-  const client = res.locals.client as IClient;
+  const client = clientOf(res);
 
   const program = await getOrCreate(client._id);
 
@@ -83,7 +84,7 @@ const filtrerCommentaire = (
 // POST /api/client/sessions/:sessionId/complete
 export const completeSession = catchAsync(
   async (req: Request, res: Response) => {
-    const client = res.locals.client as IClient;
+    const client = clientOf(res);
     const { sessionId } = req.params;
     const {
       feedback,
@@ -159,7 +160,7 @@ export const completeSession = catchAsync(
 
 // GET /api/client/history
 export const getHistory = catchAsync(async (req: Request, res: Response) => {
-  const client = res.locals.client as IClient;
+  const client = clientOf(res);
 
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
   const page = Math.max(parseInt(req.query.page as string) || 1, 1);
@@ -177,7 +178,7 @@ export const getHistory = catchAsync(async (req: Request, res: Response) => {
 // a réellement été fait. Toujours ouvert, sans fenêtre de temps.
 export const updateCompletedSession = catchAsync(
   async (req: Request, res: Response) => {
-    const client = res.locals.client as IClient;
+    const client = clientOf(res);
     const { id } = req.params;
     const { feedback, performed, roundsDone, clientNotes, completedAt } =
       req.body;
@@ -253,7 +254,7 @@ export const PORTE_DES_DONNEES_DE_SANTE = {
 // c'est ce qui évite de reposer la question à chaque visite.
 export const setHealthConsent = catchAsync(
   async (req: Request, res: Response) => {
-    const client = res.locals.client as IClient;
+    const client = clientOf(res);
     const { granted } = req.body;
     const rid = req.requestId ?? '?';
 

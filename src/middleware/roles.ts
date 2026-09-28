@@ -1,4 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+import type { ICoach } from '../models/Coach';
+import type { IClient } from '../models/Client';
 import User from '../models/User';
 import Coach from '../models/Coach';
 import Client from '../models/Client';
@@ -63,3 +65,34 @@ export const requireClient = catchAsync(
     next();
   }
 );
+
+/**
+ * Reading what the guards above put there.
+ *
+ * `Express.Locals` declares `coach` and `client` as optional — correctly, since
+ * a response only carries them once the matching guard has run. Controllers
+ * answered that with `res.locals.coach as ICoach`, eighteen times over, and an
+ * assertion is a promise to the compiler that nobody checks.
+ *
+ * The promise holds only as long as every route mounting a controller also
+ * mounts its guard. The day one does not, the controller receives `undefined`,
+ * the assertion hides it, and the first `coach._id` throws a TypeError — a 500
+ * on what is really a 403, with a stack trace in place of an explanation.
+ *
+ * These read the same value and check it. Same type, no cast, and a missing
+ * guard now says what it is.
+ */
+const required = <T>(value: T | undefined, space: string): T => {
+  if (!value) {
+    throw new AppError(`Accès refusé : Espace ${space} uniquement`, 403);
+  }
+  return value;
+};
+
+/** The coach this request belongs to. 403 if `requireCoach` did not run. */
+export const coachOf = (res: Response): ICoach =>
+  required(res.locals.coach, 'Coach');
+
+/** The client this request belongs to. 403 if `requireClient` did not run. */
+export const clientOf = (res: Response): IClient =>
+  required(res.locals.client, 'Client');

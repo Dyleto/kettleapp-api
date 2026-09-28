@@ -43,18 +43,11 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # The error handler, mounted on a bare Express app. No database, no
-      # network: it asserts on the arity Express actually reads, and on the
-      # content type every error comes back with.
-      - run: npm run verify:errors
-
-      # The two ceilings the API enforces: whose quota a request counts
-      # against, and how large a body may be. Both were defaults nobody chose.
-      - run: npm run verify:hardening
-
-      # What validation does to a request: strips what the schema did not
-      # ask for, runs its transforms, and checks the identifiers in the URL.
-      - run: npm run verify:validation
+      # Everything that runs without a database, mounted on bare Express
+      # apps: the error handler's arity and content type, what a missing
+      # guard answers, what validation does to a request, and the two
+      # ceilings — quota and body size.
+      - run: npm run verify
 
       # `verify:copy` and `verify:rounds` need mongodb-memory-server, which
       # downloads a MongoDB binary on first run. Deliberately not wired here

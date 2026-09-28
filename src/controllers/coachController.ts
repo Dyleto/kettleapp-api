@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError } from '../utils/AppError';
-import { ICoach } from '../models/Coach';
+import { coachOf } from '../middleware/roles';
 import InvitationToken from '../models/InvitationToken';
 import Client from '../models/Client';
 import Exercise from '../models/Exercise';
@@ -10,6 +10,7 @@ import Session from '../models/Session';
 import mongoose, { isValidObjectId, Types } from 'mongoose';
 import CompletedSession from '../models/CompletedSession';
 import { getAuthorizedClient } from '../services/coachService';
+import type { SessionInput } from '../schemas/programSchema';
 import { getOrCreate } from '../services/programService';
 import logger from '../utils/logger';
 import { PopulatedSession, formatSession } from '../utils/sessionFormatter';
@@ -29,7 +30,7 @@ import { getErrorMessage } from '../utils/errors';
  */
 export const getActiveInvitation = catchAsync(
   async (req: Request, res: Response) => {
-    const coach = res.locals.coach as ICoach;
+    const coach = coachOf(res);
 
     const invitationToken = await InvitationToken.findOne({
       coachId: coach._id,
@@ -49,7 +50,7 @@ export const getActiveInvitation = catchAsync(
 
 export const generateInvitation = catchAsync(
   async (req: Request, res: Response) => {
-    const coach = res.locals.coach as ICoach;
+    const coach = coachOf(res);
     const expiresIn = req.body.expiresIn || 7; // jours
     const minimumDaysLeft = 5;
 
@@ -88,7 +89,7 @@ export const generateInvitation = catchAsync(
 // --------------------------------------------------------------------------
 
 export const getClients = catchAsync(async (req: Request, res: Response) => {
-  const coach = res.locals.coach as ICoach;
+  const coach = coachOf(res);
 
   const clients = await Client.aggregate([
     { $match: { 'coaches.coachId': coach._id } },
@@ -176,7 +177,7 @@ export const getClients = catchAsync(async (req: Request, res: Response) => {
 
 export const getClientDetails = catchAsync(
   async (req: Request, res: Response) => {
-    const coach = res.locals.coach as ICoach;
+    const coach = coachOf(res);
     const clientId = req.params.id as string;
 
     const rawClient = await getAuthorizedClient(coach._id, clientId);
@@ -215,7 +216,7 @@ export const getClientDetails = catchAsync(
 
 export const getClientHistory = catchAsync(
   async (req: Request, res: Response) => {
-    const coach = res.locals.coach as ICoach;
+    const coach = coachOf(res);
     const clientId = req.params.id as string;
 
     const client = await getAuthorizedClient(coach._id, clientId);
@@ -234,7 +235,7 @@ export const getClientHistory = catchAsync(
 
 export const markHistoryAsViewed = catchAsync(
   async (req: Request, res: Response) => {
-    const coach = res.locals.coach as ICoach;
+    const coach = coachOf(res);
     const clientId = req.params.id as string;
 
     await getAuthorizedClient(coach._id, clientId);
@@ -295,7 +296,7 @@ const getExerciseUsage = async (
 };
 
 export const getExercises = catchAsync(async (req: Request, res: Response) => {
-  const coach = res.locals.coach as ICoach;
+  const coach = coachOf(res);
 
   const [exercises, usage] = await Promise.all([
     Exercise.find({ createdBy: coach._id }).sort({ name: 1 }).lean(),
@@ -312,7 +313,7 @@ export const getExercises = catchAsync(async (req: Request, res: Response) => {
 
 export const getExerciseDetails = catchAsync(
   async (req: Request, res: Response) => {
-    const coach = res.locals.coach as ICoach;
+    const coach = coachOf(res);
     const { id } = req.params;
 
     const exercise = await Exercise.findOne({ _id: id, createdBy: coach._id });
@@ -324,7 +325,7 @@ export const getExerciseDetails = catchAsync(
 
 export const createExercise = catchAsync(
   async (req: Request, res: Response) => {
-    const coach = res.locals.coach as ICoach;
+    const coach = coachOf(res);
     const { name, description, videoUrl } = req.body;
 
     const exercise = await Exercise.create({
@@ -340,7 +341,7 @@ export const createExercise = catchAsync(
 
 export const updateExercise = catchAsync(
   async (req: Request, res: Response) => {
-    const coach = res.locals.coach as ICoach;
+    const coach = coachOf(res);
     const { id } = req.params;
     const { name, description, videoUrl } = req.body;
 
@@ -359,7 +360,7 @@ export const updateExercise = catchAsync(
 
 export const deleteExercise = catchAsync(
   async (req: Request, res: Response) => {
-    const coach = res.locals.coach as ICoach;
+    const coach = coachOf(res);
     const { id } = req.params;
 
     const usedInSession = await Session.findOne({
@@ -388,7 +389,7 @@ export const deleteExercise = catchAsync(
 
 export const updateProgramSessions = catchAsync(
   async (req: Request, res: Response) => {
-    const coach = res.locals.coach as ICoach;
+    const coach = coachOf(res);
     const clientId = req.params.clientId as string;
     const { sessions } = req.body;
     const rid = req.requestId ?? '?';
@@ -401,14 +402,6 @@ export const updateProgramSessions = catchAsync(
 
     const client = await getAuthorizedClient(coach._id, clientId);
     const program = await getOrCreate(client._id);
-
-    type SessionInput = {
-      _id?: string;
-      name?: string;
-      notes?: string;
-      suggestedDays?: number[];
-      blocks?: unknown;
-    };
 
     const dbSession = await mongoose.startSession();
     let updatedSessions;
@@ -544,7 +537,7 @@ export const updateProgramSessions = catchAsync(
  */
 export const copySessionToClient = catchAsync(
   async (req: Request, res: Response) => {
-    const coach = res.locals.coach as ICoach;
+    const coach = coachOf(res);
     const targetClientId = req.params.clientId as string;
     const { sourceClientId, sourceSessionId } = req.body as {
       sourceClientId: string;

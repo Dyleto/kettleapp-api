@@ -72,6 +72,17 @@ export const updateProgramSessionsSchema = z.object({
 });
 
 /**
+ * One session, as it arrives — described once.
+ *
+ * The controller carried its own hand-written `SessionInput` declared in the
+ * middle of a function, listing the same fields with `blocks?: unknown`. Two
+ * descriptions of one payload drift apart in silence: the schema gains a
+ * field, the type does not, and nothing says so. Deriving it means the
+ * schema is the only place the shape is written.
+ */
+export type SessionInput = z.infer<typeof sessionInputSchema>;
+
+/**
  * Copier une séance chez un autre client.
  *
  * Rien du contenu ne transite : seulement de quoi désigner la séance source.

@@ -16,7 +16,9 @@
     "typecheck": "tsc --noEmit",
     "format:check": "prettier --check src",
     "verify:hardening": "ts-node src/scripts/verifyHardening.ts",
-    "verify:validation": "ts-node src/scripts/verifyValidation.ts"
+    "verify:validation": "ts-node src/scripts/verifyValidation.ts",
+    "verify:guards": "ts-node src/scripts/verifyGuards.ts",
+    "verify": "npm run verify:errors && npm run verify:guards && npm run verify:validation && npm run verify:hardening"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
