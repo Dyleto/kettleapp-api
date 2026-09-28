@@ -28,7 +28,7 @@ import { globalErrorHandler } from '../middleware/errorHandler';
 import { validate } from '../middleware/validate';
 import { idParamSchema } from '../schemas/paramsSchema';
 import { updateProgramSessionsSchema } from '../schemas/programSchema';
-import { createUserSchema } from '../schemas/userSchema';
+import { createExerciseSchema } from '../schemas/exerciseSchema';
 import logger from '../utils/logger';
 
 logger.transports.forEach((t) => (t.silent = true));
@@ -45,7 +45,7 @@ const app = express();
 app.use(express.json());
 
 // Each route echoes back exactly what the controller would read.
-app.post('/user', validate(createUserSchema), (req, res) =>
+app.post('/exercise', validate(createExerciseSchema), (req, res) =>
   res.json({ body: req.body })
 );
 app.put('/program', validate(updateProgramSessionsSchema), (req, res) =>
@@ -81,19 +81,26 @@ const main = async () => {
   // ── An extra field does not reach the controller ──────────────────────
   console.log('\n── what the schema did not ask for does not get through');
   {
-    const r = await call('POST', '/user', {
-      email: 'pirate@example.com',
-      firstName: 'Ann',
-      isAdmin: true,
+    // Le champ en trop est celui qui comptait : `POST /users` faisait
+    // `new User(req.body)`, et `isAdmin` est déclaré sur le schéma Mongoose.
+    // Ces routes sont supprimées, mais le mécanisme se vérifie sur n'importe
+    // quel schéma vivant — ici la création d'un exercice.
+    const r = await call('POST', '/exercise', {
+      name: 'Kettlebell Swing',
+      createdBy: 'un-autre-coach',
+      usageCount: 9999,
     });
     const body = r.json.body as Record<string, unknown>;
-    ok('the request is accepted', r.status === 200, String(r.status));
+    ok('la requête est acceptée', r.status === 200, String(r.status));
     ok(
-      '  → but `isAdmin` never reaches the controller',
-      !('isAdmin' in body),
+      "  → mais ce que le schéma n'a pas demandé n'atteint pas le contrôleur",
+      !('createdBy' in body) && !('usageCount' in body),
       JSON.stringify(body)
     );
-    ok('  → while the declared fields do', body.email === 'pirate@example.com');
+    ok(
+      '  → alors que les champs déclarés arrivent',
+      body.name === 'Kettlebell Swing'
+    );
   }
 
   // ── Transforms and defaults actually run ─────────────────────────────

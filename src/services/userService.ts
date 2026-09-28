@@ -1,16 +1,7 @@
-import User, { IUser } from '../models/User';
+import { IUser } from '../models/User';
 import Coach from '../models/Coach';
 import Client from '../models/Client';
 import { HEALTH_CONSENT_VERSION } from '../constants/consent';
-
-export const createUserService = async (data: IUser): Promise<IUser> => {
-  const newUser = new User(data);
-  return await newUser.save();
-};
-
-export const getUsersService = async (): Promise<IUser[]> => {
-  return await User.find();
-};
 
 export const buildUser = async (user: IUser) => {
   const [coach, client] = await Promise.all([
