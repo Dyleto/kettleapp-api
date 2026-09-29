@@ -1,5 +1,12 @@
 import { Schema, Document, model } from 'mongoose';
 
+/**
+ * Le compte, et rien que le compte : de quoi identifier une personne.
+ *
+ * Pas de mot de passe — l'authentification passe par Google. Prénom et nom
+ * sont facultatifs parce qu'ils viennent du profil Google, qui ne les donne
+ * pas toujours.
+ */
 export interface IUser extends Document {
   email: string;
   picture?: string;

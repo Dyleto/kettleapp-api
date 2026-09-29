@@ -1,6 +1,11 @@
 import { model, Schema, Types, Document } from 'mongoose';
 import { IUser } from './User';
 
+/**
+ * Le rôle « coach » d'un compte. Presque vide, et c'est normal : ce qui
+ * appartient au coach — ses clients, sa bibliothèque — le désigne depuis
+ * ailleurs, plutôt que d'être listé ici.
+ */
 export interface ICoach extends Document {
   _id: Types.ObjectId;
   userId: IUser | Types.ObjectId;

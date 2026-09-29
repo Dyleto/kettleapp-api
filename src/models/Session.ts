@@ -1,5 +1,12 @@
 import { model, Schema, Types, Document } from 'mongoose';
 
+/**
+ * Les formats de bloc que l'atelier sait écrire.
+ *
+ * Ce n'est pas une liste ouverte : chaque valeur a son rendu dans l'éditeur,
+ * son minuteur dans le mode guidé et sa façon de s'écrire. En ajouter un veut
+ * dire passer par ces trois endroits.
+ */
 export type BlockType =
   | 'warmup'
   | 'emom'
@@ -34,6 +41,13 @@ export const BLOCK_TYPES: BlockType[] = [
   'ladder',
 ];
 
+/**
+ * Un exercice tel qu'il est prescrit dans un bloc.
+ *
+ * Il pointe vers la bibliothèque (`exerciseId`) et porte à côté ce qui
+ * n'appartient qu'à cette séance : les doses et la consigne. Le mouvement est
+ * partagé, la prescription ne l'est pas.
+ */
 export interface IBlockExercise {
   exerciseId: Types.ObjectId;
   order: number;
@@ -54,6 +68,16 @@ export interface IBlockExercise {
   note?: string;
 }
 
+/**
+ * Un bloc : un format, et les exercices qu'il enchaîne.
+ *
+ * Presque tous les champs sont facultatifs parce qu'aucun format ne les
+ * utilise tous — un AMRAP a un `durationMinutes`, un Tabata un `workDuration`
+ * et un `restDuration`, un classique ni l'un ni l'autre. L'atelier change le
+ * type d'un bloc d'un clic en gardant ses exercices : un schéma par format
+ * l'obligerait à reconstruire le document, donc à perdre ce que l'autre ne
+ * porte pas.
+ */
 export interface ISessionBlock {
   type: BlockType;
   label?: string;
@@ -69,6 +93,13 @@ export interface ISessionBlock {
   exercises: IBlockExercise[];
 }
 
+/**
+ * Une séance du programme, telle que le coach l'écrit.
+ *
+ * C'est la prescription vivante : elle change quand il la corrige. Ce que le
+ * client a fait un jour donné vit dans `CompletedSession`, qui en garde une
+ * copie figée — corriger son programme ne réécrit pas son histoire.
+ */
 export interface ISession extends Document {
   programId: Types.ObjectId;
   order: number;

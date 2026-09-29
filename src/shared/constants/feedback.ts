@@ -10,4 +10,7 @@ export const FEEDBACK_TAGS = [
   'great_shape',
 ] as const;
 
+/** Le type se dérive de la liste, jamais l'inverse : une étiquette ajoutée
+ * à un seul endroit reste acceptée à l'autre, et le défaut ne se voit qu'en
+ * production. */
 export type FeedbackTag = (typeof FEEDBACK_TAGS)[number];

@@ -1,6 +1,12 @@
 import { model, Schema, Types, Document } from 'mongoose';
 import { IUser } from './User';
 
+/**
+ * Le lien entre un client et l'un de ses coachs, daté.
+ *
+ * Une liste et non un champ unique : un client peut suivre deux coachs — en
+ * salle et à distance — et l'un ne doit pas voir ce que l'autre écrit.
+ */
 export interface CoachLink {
   coachId: Types.ObjectId;
   linkedAt: Date;
@@ -19,6 +25,13 @@ export interface HealthConsent {
   version: string;
 }
 
+/**
+ * Le rôle « client » d'un compte, distinct du compte lui-même.
+ *
+ * Le même `User` peut porter un `Client` et un `Coach` : un coach s'écrit ses
+ * propres séances. Fondre les deux dans `User` obligeait à deux comptes, donc
+ * à deux connexions et à deux adresses e-mail.
+ */
 export interface IClient extends Document {
   _id: Types.ObjectId;
   userId: IUser | Types.ObjectId;
@@ -59,7 +72,9 @@ const ClientSchema: Schema = new Schema(
   }
 );
 
-// Index pour Ã©viter les doublons de coaches
+// Un client ne peut pas être lié deux fois au même coach : la contrainte
+// est en base et non dans le code, parce que deux requêtes simultanées
+// passeraient toutes deux un contrôle applicatif.
 ClientSchema.index(
   { userId: 1, 'coaches.coachId': 1 },
   { unique: true, sparse: true }

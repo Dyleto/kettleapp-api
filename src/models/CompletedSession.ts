@@ -22,6 +22,14 @@ export interface IPerformed {
   sets: IPerformedSet[];
 }
 
+/**
+ * Un exercice figé le jour où la séance a été faite.
+ *
+ * `exercise` est une copie et non une référence : renommer un mouvement, ou
+ * le retirer de la bibliothèque, ne doit ni réécrire ni vider un historique
+ * déjà enregistré. Le type reste volontairement lâche — l'instantané garde ce
+ * que l'exercice portait à l'époque, champs d'alors compris.
+ */
 export interface IBlockExerciseSnapshot {
   exercise: Record<string, unknown>;
   order: number;
@@ -35,6 +43,12 @@ export interface IBlockExerciseSnapshot {
   performed?: IPerformed;
 }
 
+/**
+ * Un bloc figé : ce qui était demandé, et ce qui en a été fait.
+ *
+ * `type` est une chaîne et non `BlockType` : un bilan de l'an dernier peut
+ * porter un format qui n'existe plus, et il doit rester lisible.
+ */
 export interface IBlockSnapshot {
   type: string;
   label?: string;
@@ -61,12 +75,29 @@ export interface IBlockSnapshot {
   exercises: IBlockExerciseSnapshot[];
 }
 
+/**
+ * Le ressenti d'une séance, en une note et deux compléments facultatifs.
+ *
+ * A remplacé cinq curseurs — stress, humeur, énergie, sommeil, courbatures —
+ * que presque personne ne remplissait jusqu'au bout. Ce sont des données de
+ * santé : elles ne sont enregistrées qu'avec un consentement, et c'est
+ * `healthConsent` qui le porte.
+ */
 export interface IFeedback {
   effort: number;
   tags?: FeedbackTag[];
   note?: string;
 }
 
+/**
+ * Une séance terminée : la prescription de ce jour-là, et ce qui en a été
+ * fait.
+ *
+ * Tout est figé, jusqu'au nom et au rang de la séance. C'est ce qui permet au
+ * coach de corriger son programme sans réécrire l'histoire, et c'est aussi ce
+ * qui laisse comparer une séance d'aujourd'hui à la même d'il y a un mois :
+ * deux instantanés se comparent, deux prescriptions vivantes non.
+ */
 export interface ICompletedSession extends Document {
   clientId: Types.ObjectId;
   programId: Types.ObjectId;

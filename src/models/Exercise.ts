@@ -1,5 +1,13 @@
 import { Document, model, Schema, Types } from 'mongoose';
 
+/**
+ * Un mouvement de la bibliothèque d'un coach.
+ *
+ * Il appartient au coach (`createdBy`) : le même « Goblet squat » sert chez
+ * tous ses clients, et corriger sa vidéo une fois la corrige partout. C'est
+ * aussi pourquoi un bilan en garde une copie figée — voir
+ * `IBlockExerciseSnapshot`.
+ */
 export interface IExercise extends Document {
   name: string;
   description?: string;
