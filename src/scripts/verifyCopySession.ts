@@ -212,9 +212,32 @@ const main = async () => {
   );
 
   // ── Deux séances distinctes, qui ne partagent aucun identifiant ───────────
-  // Les sous-documents portent bien un `_id` à l'exécution — Mongoose le pose
-  // par défaut — mais le type du bloc ne le déclare pas.
+  //
+  // Le bloc porte un `_id`, l'exercice non : `blockExerciseSchema` est
+  // déclaré `{ _id: false }`, le bloc qui l'entoure `{ _id: true }`. Mesuré
+  // hors base — un bloc neuf rend `{ exerciseId, order }` et rien d'autre.
+  //
+  // L'assertion qui vivait ici comparait deux identifiants d'exercice, donc
+  // deux chaînes vides, et tombait pour cette seule raison. Son commentaire
+  // affirmait que les sous-documents en portent tous un : vrai du bloc, faux
+  // de l'exercice. Elle est remplacée par un parcours de l'arbre entier, qui
+  // reste juste si quelqu'un active un jour les identifiants d'exercice.
   const idOf = (o: unknown) => String((o as { _id?: unknown })?._id ?? '');
+
+  /** Tous les identifiants d'une séance, à toutes les profondeurs. */
+  const idsOf = (s: unknown) => {
+    const doc = s as {
+      _id?: unknown;
+      blocks?: { _id?: unknown; exercises?: { _id?: unknown }[] }[];
+    };
+    return [
+      idOf(doc),
+      ...(doc.blocks ?? []).flatMap((b) => [
+        idOf(b),
+        ...(b.exercises ?? []).map(idOf),
+      ]),
+    ].filter(Boolean);
+  };
   const original = await Session.findById(session._id).lean();
   ok(
     "la copie ne partage pas l'identifiant de séance",
@@ -225,10 +248,17 @@ const main = async () => {
     idOf(copied?.blocks?.[0]) !== idOf(original?.blocks?.[0]),
     `${idOf(copied?.blocks?.[0]).slice(-6)} ≠ ${idOf(original?.blocks?.[0]).slice(-6)}`
   );
+  // Le `>= 2` n'est pas décoratif : sans lui, deux arbres sans aucun
+  // identifiant se partageraient « rien » et l'assertion passerait sans rien
+  // couvrir. C'est exactement le piège dans lequel l'ancienne version était
+  // tombée.
+  const shared = idsOf(copied).filter((id) => idsOf(original).includes(id));
   ok(
-    '  → ni celui de son exercice',
-    idOf(copied?.blocks?.[0]?.exercises?.[0]) !==
-      idOf(original?.blocks?.[0]?.exercises?.[0])
+    '  → ni aucun autre, à aucune profondeur',
+    shared.length === 0 && idsOf(copied).length >= 2,
+    shared.length > 0
+      ? `partagé(s) : ${shared.join(', ')}`
+      : `${idsOf(copied).length} identifiants comparés`
   );
   ok("  → l'originale n'a pas bougé de place", original?.order === 1);
   ok(
