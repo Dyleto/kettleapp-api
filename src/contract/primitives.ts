@@ -67,3 +67,5 @@ export const customMetric = z.object({
   value: z.number(),
   unit: z.string(),
 });
+
+export type CustomMetricPayload = z.infer<typeof customMetric>;

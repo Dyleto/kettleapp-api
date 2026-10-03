@@ -1,10 +1,11 @@
-# What has to hold before anything is merged.
+# Ce qui doit tenir avant toute fusion.
 #
-# Nothing guarded this repository until now, and it showed: `npm run lint`
-# had been failing on eight errors, `prettier --check` on thirty-four files
-# of fifty-two, and a three-parameter error handler had been answering every
-# error in HTML instead of JSON without anyone noticing. None of those needed
-# a clever test — they only needed something that runs.
+# Rien ne gardait ce dépôt jusqu'ici, et cela se voyait : `npm run lint`
+# échouait sur huit erreurs, `prettier --check` sur trente-quatre fichiers sur
+# cinquante-deux, et un gestionnaire d'erreurs à trois paramètres répondait à
+# toutes les erreurs en HTML au lieu de JSON sans que personne ne l'ait vu.
+# Aucun de ces défauts ne demandait un test astucieux — il leur suffisait de
+# quelque chose qui tourne.
 name: CI
 
 on:
@@ -32,8 +33,13 @@ jobs:
       - run: npm run format:check
       - run: npm run build
 
+      # Le contrat publié doit être celui que les schémas produisent. Un
+      # schéma modifié sans régénération laisserait le front sur des types
+      # périmés, et rien ne le dirait — ni ici, ni là-bas.
+      - run: npm run contract:check
+
   checks:
-    name: Runtime checks
+    name: Vérifications à l'exécution
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -43,14 +49,16 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # Everything that runs without a database, mounted on bare Express
-      # apps: the error handler's arity and content type, what a missing
-      # guard answers, what validation does to a request, and the two
-      # ceilings — quota and body size.
+      # Tout ce qui tourne sans base de données, monté sur des applications
+      # Express nues : l'arité et le type de contenu du gestionnaire
+      # d'erreurs, ce que répond un garde oublié, ce que la validation fait
+      # d'une requête, les deux plafonds — quota et taille de corps — et le
+      # contrat de sortie.
       - run: npm run verify
 
-      # `verify:copy` and `verify:rounds` need mongodb-memory-server, which
-      # downloads a MongoDB binary on first run. Deliberately not wired here
-      # yet: they have never been run at all — this container's network
-      # policy forbids the download — so making CI depend on them would mean
-      # shipping a step nobody has ever seen pass.
+      # `verify:copy` et `verify:rounds` exigent mongodb-memory-server, qui
+      # télécharge un binaire MongoDB au premier lancement. Délibérément pas
+      # branchés ici : ils n'ont jamais tourné du tout — la politique réseau
+      # de ce conteneur interdit le téléchargement — et faire dépendre la CI
+      # d'une étape que personne n'a jamais vue passer serait livrer une
+      # garantie qu'on n'a pas.

@@ -8,18 +8,20 @@
     "start": "node dist/index.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
-    "format": "prettier --write src",
+    "format": "prettier --write src contract",
     "seed:exercises": "ts-node src/scripts/seedExercises.ts",
     "verify:copy": "ts-node src/scripts/verifyCopySession.ts",
     "verify:rounds": "ts-node src/scripts/verifyRoundsDone.ts",
     "verify:errors": "ts-node src/scripts/verifyErrorHandler.ts",
     "typecheck": "tsc --noEmit",
-    "format:check": "prettier --check src",
+    "format:check": "prettier --check src contract",
     "verify:hardening": "ts-node src/scripts/verifyHardening.ts",
     "verify:validation": "ts-node src/scripts/verifyValidation.ts",
     "verify:guards": "ts-node src/scripts/verifyGuards.ts",
     "verify": "npm run verify:errors && npm run verify:guards && npm run verify:validation && npm run verify:hardening && npm run verify:contract",
-    "verify:contract": "ts-node src/scripts/verifyContract.ts"
+    "verify:contract": "ts-node src/scripts/verifyContract.ts",
+    "contract:build": "ts-node src/scripts/buildContract.ts",
+    "contract:check": "ts-node src/scripts/buildContract.ts --check"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
