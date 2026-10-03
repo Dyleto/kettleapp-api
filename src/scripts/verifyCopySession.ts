@@ -64,9 +64,14 @@ const main = async () => {
   const targetClient = await createClient(coachId);
   const stranger = await createClient(otherCoachId);
 
+  // `createdBy` et non `coachId` : un exercice appartient au coach qui l'a
+  // créé, et c'est le nom que porte le modèle. L'écart est passé inaperçu
+  // jusqu'au premier lancement de ce script — il ne tourne pas en CI, faute
+  // de pouvoir y télécharger un binaire MongoDB, et personne ne l'avait
+  // encore lancé à la main.
   const exercise = await Exercise.create({
     name: 'Kettlebell Swing',
-    coachId,
+    createdBy: coachId,
   });
 
   const sourceProgram = await Program.create({ clientId: source._id });

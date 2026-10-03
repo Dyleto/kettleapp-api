@@ -105,9 +105,14 @@ de sortie. La CI l'appelle.
 ordinaires : c'est la seule façon de voir les chemins imbriqués vides, qui
 n'existent que sur un document.
 
-`verify:copy` et `verify:rounds` exigent `mongodb-memory-server`, qui
-télécharge un binaire MongoDB : ils ne sont pas branchés à la CI et n'ont
-jamais tourné. À lancer depuis une machine en réseau avant un déploiement.
+`verify:copy` exige `mongodb-memory-server`, qui télécharge un binaire
+MongoDB : il n'est pas branché à la CI, et il ne peut pas l'être. À lancer
+depuis une machine en réseau avant un déploiement.
+
+`verify:rounds` était rangé avec lui, et à tort : `applyRoundsDone` est une
+fonction pure, le script n'ouvre aucune connexion. Il est dans la chaîne
+`verify`, donc dans la CI. La confusion lui a coûté de ne jamais tourner,
+alors que rien ne l'en empêchait.
 
 ## Ce qui garde le projet
 
