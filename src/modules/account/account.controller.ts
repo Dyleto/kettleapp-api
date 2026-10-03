@@ -12,7 +12,7 @@ import { catchAsync } from '../../shared/utils/catchAsync';
 import { AppError } from '../../shared/utils/AppError';
 import logger from '../../shared/utils/logger';
 import { getErrorMessage } from '../../shared/utils/errors';
-import { PORTE_DES_DONNEES_DE_SANTE } from '../client/client.controller';
+import { CARRIES_HEALTH_DATA } from '../client/client.controller';
 import { respond } from '../../shared/utils/respond';
 import { accountSummaryPayload, messagePayload } from '../../contract';
 
@@ -35,8 +35,8 @@ export const getAccount = catchAsync(async (req: Request, res: Response) => {
     ? await (async () => {
         const [coaches, completedCount, healthDataCount] = await Promise.all([
           Promise.all(
-            client.coaches.map(async (lien) => {
-              const c = await Coach.findById(lien.coachId).populate<{
+            client.coaches.map(async (link) => {
+              const c = await Coach.findById(link.coachId).populate<{
                 userId: IUser;
               }>('userId');
               if (!c?.userId) return null;
@@ -44,7 +44,7 @@ export const getAccount = catchAsync(async (req: Request, res: Response) => {
                 firstName: c.userId.firstName ?? '',
                 lastName: c.userId.lastName ?? '',
                 picture: c.userId.picture,
-                linkedAt: lien.linkedAt,
+                linkedAt: link.linkedAt,
               };
             })
           ),
@@ -54,7 +54,7 @@ export const getAccount = catchAsync(async (req: Request, res: Response) => {
           // compte tout neuf qu'on va effacer ses données serait faux.
           CompletedSession.countDocuments({
             clientId: client._id,
-            ...PORTE_DES_DONNEES_DE_SANTE,
+            ...CARRIES_HEALTH_DATA,
           }),
         ]);
 
@@ -101,13 +101,13 @@ export const deleteAccount = catchAsync(async (req: Request, res: Response) => {
       ]);
 
       if (client) {
-        const programmes = await Program.find({ clientId: client._id })
+        const programs = await Program.find({ clientId: client._id })
           .select('_id')
           .session(dbSession);
-        const programmeIds = programmes.map((p) => p._id);
+        const programIds = programs.map((p) => p._id);
 
         await Session.deleteMany(
-          { programId: { $in: programmeIds } },
+          { programId: { $in: programIds } },
           { session: dbSession }
         );
         await Program.deleteMany(
@@ -130,7 +130,7 @@ export const deleteAccount = catchAsync(async (req: Request, res: Response) => {
           'coaches.coachId': coach._id,
         }).session(dbSession);
 
-        const orphelins = clients
+        const orphans = clients
           .filter(
             (c) =>
               c.coaches.filter(
@@ -139,19 +139,19 @@ export const deleteAccount = catchAsync(async (req: Request, res: Response) => {
           )
           .map((c) => c._id);
 
-        if (orphelins.length > 0) {
-          const programmes = await Program.find({
-            clientId: { $in: orphelins },
+        if (orphans.length > 0) {
+          const programs = await Program.find({
+            clientId: { $in: orphans },
           })
             .select('_id')
             .session(dbSession);
 
           await Session.deleteMany(
-            { programId: { $in: programmes.map((p) => p._id) } },
+            { programId: { $in: programs.map((p) => p._id) } },
             { session: dbSession }
           );
           await Program.deleteMany(
-            { clientId: { $in: orphelins } },
+            { clientId: { $in: orphans } },
             { session: dbSession }
           );
         }

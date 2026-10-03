@@ -8,6 +8,7 @@
     "start": "node dist/index.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
+    "lint:langue": "node scripts/audit-langue.mjs",
     "format": "prettier --write src contract",
     "seed:exercises": "ts-node src/scripts/seedExercises.ts",
     "verify:copy": "ts-node src/scripts/verifyCopySession.ts",

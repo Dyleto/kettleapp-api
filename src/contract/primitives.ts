@@ -48,14 +48,17 @@ export const isoDate = z
  * clés ne voyait aucun des deux cas ; regarder si tout vaut `undefined` voit
  * les deux.
  */
-const vide = (value: unknown) =>
+const isBlank = (value: unknown) =>
   value !== null &&
   typeof value === 'object' &&
   !Array.isArray(value) &&
   Object.values(value as object).every((v) => v === undefined);
 
 export const vacant = <S extends z.ZodType>(schema: S) =>
-  z.preprocess((value) => (vide(value) ? undefined : value), schema.optional());
+  z.preprocess(
+    (value) => (isBlank(value) ? undefined : value),
+    schema.optional()
+  );
 
 /**
  * Une mesure que Kettle ne connaît pas — « 400 m », « 20 cal ».

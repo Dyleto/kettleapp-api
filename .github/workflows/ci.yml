@@ -30,6 +30,13 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
+
+      # La règle de langue : commentaires en français, identifiants en
+      # anglais. Vérifiée ici parce qu'elle a été annoncée tenue quatre fois
+      # sans l'être côté front — une règle qu'on vérifie à la main est une
+      # règle qu'on croit tenue.
+      - run: npm run lint:langue
+
       - run: npm run format:check
       - run: npm run build
 

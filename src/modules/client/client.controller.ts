@@ -50,7 +50,7 @@ export const getProgram = catchAsync(async (req: Request, res: Response) => {
  * version en vigueur : la question se repose, et en attendant la réponse on
  * s'en tient au plus prudent.
  */
-const partageAutorise = (client: IClient): boolean =>
+const sharingAllowed = (client: IClient): boolean =>
   client.healthConsent?.granted === true &&
   client.healthConsent.version === HEALTH_CONSENT_VERSION;
 
@@ -66,9 +66,9 @@ const partageAutorise = (client: IClient): boolean =>
  * l'écran reste envoyable à la main, et c'est le serveur qui répond de ce
  * qu'il écrit.
  */
-const filtrerRessenti = (feedback: unknown, client: IClient): unknown => {
+const filterFeedback = (feedback: unknown, client: IClient): unknown => {
   if (!feedback || typeof feedback !== 'object') return feedback;
-  if (partageAutorise(client)) return feedback;
+  if (sharingAllowed(client)) return feedback;
 
   const { tags, note, ...reste } = feedback as Record<string, unknown>;
   void tags;
@@ -83,11 +83,11 @@ const filtrerRessenti = (feedback: unknown, client: IClient): unknown => {
  * s'appelle « douleur » ou « commentaire ». On ne peut pas trier au cas par
  * cas, donc on ne collecte pas.
  */
-const filtrerCommentaire = (
+const filterComment = (
   clientNotes: unknown,
   client: IClient
 ): string | undefined =>
-  partageAutorise(client) ? (clientNotes as string | undefined) : undefined;
+  sharingAllowed(client) ? (clientNotes as string | undefined) : undefined;
 
 // POST /api/client/sessions/:sessionId/complete
 export const completeSession = catchAsync(
@@ -151,9 +151,9 @@ export const completeSession = catchAsync(
       sessionName: session.name,
       blocks,
       coachNotes: session.notes,
-      ...(feedback ? { feedback: filtrerRessenti(feedback, client) } : {}),
+      ...(feedback ? { feedback: filterFeedback(feedback, client) } : {}),
       ...(metrics ? { metrics } : {}),
-      clientNotes: filtrerCommentaire(clientNotes, client),
+      clientNotes: filterComment(clientNotes, client),
       ...(completedAt ? { completedAt: new Date(completedAt) } : {}),
     });
 
@@ -208,9 +208,9 @@ export const updateCompletedSession = catchAsync(
     }
 
     if (feedback !== undefined)
-      completed.set('feedback', filtrerRessenti(feedback, client));
+      completed.set('feedback', filterFeedback(feedback, client));
     if (clientNotes !== undefined)
-      completed.clientNotes = filtrerCommentaire(clientNotes, client);
+      completed.clientNotes = filterComment(clientNotes, client);
     if (completedAt !== undefined)
       completed.completedAt = new Date(completedAt);
 
@@ -248,7 +248,7 @@ export const updateCompletedSession = catchAsync(
  * La même condition sert à compter avant et à effacer ensuite — sans quoi
  * l'avertissement pourrait annoncer un nombre que la purge ne tient pas.
  */
-export const PORTE_DES_DONNEES_DE_SANTE = {
+export const CARRIES_HEALTH_DATA = {
   $or: [
     { 'feedback.tags.0': { $exists: true } },
     { clientNotes: { $exists: true, $ne: '' } },
@@ -280,20 +280,20 @@ export const setHealthConsent = catchAsync(
     // Retirer son accord ne vaut rien si ce qui a été collecté reste en base.
     // Les étiquettes et les commentaires déjà enregistrés partent ; l'effort,
     // les charges et les séances ne sont pas concernés.
-    let efface = 0;
+    let cleared = 0;
     if (!granted) {
       const { modifiedCount } = await CompletedSession.updateMany(
-        { clientId: client._id, ...PORTE_DES_DONNEES_DE_SANTE },
+        { clientId: client._id, ...CARRIES_HEALTH_DATA },
         { $unset: { 'feedback.tags': '', clientNotes: '' } }
       );
-      efface = modifiedCount;
+      cleared = modifiedCount;
     }
 
     logger.info(`[${rid}] setHealthConsent: recorded`, {
       clientId: client._id,
       granted,
       version: HEALTH_CONSENT_VERSION,
-      purgedSessions: efface,
+      purgedSessions: cleared,
     });
 
     respond(res, 200, z.object({ healthConsent: healthConsentPayload }), {

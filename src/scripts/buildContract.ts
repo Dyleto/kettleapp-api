@@ -28,7 +28,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as ts from 'typescript';
 
-const SORTIE = join(__dirname, '..', '..', 'contract', 'kettle-contract.ts');
+const OUTPUT = join(__dirname, '..', '..', 'contract', 'kettle-contract.ts');
 
 /**
  * Les types publiés, et dans quel ordre.
@@ -37,7 +37,7 @@ const SORTIE = join(__dirname, '..', '..', 'contract', 'kettle-contract.ts');
  * Un type ajouté au contrat n'arrive pas chez le front parce qu'il existe,
  * mais parce que quelqu'un l'a inscrit ici.
  */
-const PUBLIES = [
+const PUBLISHED = [
   ['primitives', ['CustomMetricPayload']],
   [
     'user.contract',
@@ -101,8 +101,8 @@ const PUBLIES = [
  * sans lui, un type profond comme la séance se termine par `...` et le
  * fichier publié ne compile pas.
  */
-const ecrireType = (checker: ts.TypeChecker, symbole: ts.Symbol): string => {
-  const type = checker.getDeclaredTypeOfSymbol(symbole);
+const writeType = (checker: ts.TypeChecker, symbol: ts.Symbol): string => {
+  const type = checker.getDeclaredTypeOfSymbol(symbol);
   return checker.typeToString(
     type,
     undefined,
@@ -112,9 +112,9 @@ const ecrireType = (checker: ts.TypeChecker, symbole: ts.Symbol): string => {
   );
 };
 
-const racine = join(__dirname, '..', 'contract');
-const programme = ts.createProgram(
-  PUBLIES.map(([fichier]) => join(racine, `${fichier}.ts`)),
+const root = join(__dirname, '..', 'contract');
+const program = ts.createProgram(
+  PUBLISHED.map(([file]) => join(root, `${file}.ts`)),
   {
     strict: true,
     target: ts.ScriptTarget.ES2022,
@@ -123,51 +123,54 @@ const programme = ts.createProgram(
     skipLibCheck: true,
   }
 );
-const checker = programme.getTypeChecker();
+const checker = program.getTypeChecker();
 
-const morceaux: string[] = [];
-let manquants = 0;
+const chunks: string[] = [];
+let missingKeys = 0;
 
-for (const [fichier, noms] of PUBLIES) {
-  const source = programme.getSourceFile(join(racine, `${fichier}.ts`));
+for (const [file, names] of PUBLISHED) {
+  const source = program.getSourceFile(join(root, `${file}.ts`));
   if (!source) {
-    console.error(`introuvable : ${fichier}.ts`);
-    manquants++;
+    console.error(`introuvable : ${file}.ts`);
+    missingKeys++;
     continue;
   }
-  const exportes = checker.getExportsOfModule(
+  const exported = checker.getExportsOfModule(
     checker.getSymbolAtLocation(source)!
   );
-  for (const nom of noms) {
-    const symbole = exportes.find((s) => s.getName() === nom);
-    if (!symbole) {
-      console.error(`type absent du contrat : ${nom} (${fichier}.ts)`);
-      manquants++;
+  for (const name of names) {
+    const symbol = exported.find((s) => s.getName() === name);
+    if (!symbol) {
+      console.error(`type absent du contrat : ${name} (${file}.ts)`);
+      missingKeys++;
       continue;
     }
     const doc = ts.displayPartsToString(
-      symbole.getDocumentationComment(checker)
+      symbol.getDocumentationComment(checker)
     );
-    morceaux.push(
+    chunks.push(
       (doc
         ? `/**\n${doc
             .split('\n')
             .map((l) => ` * ${l}`.trimEnd())
             .join('\n')}\n */\n`
-        : '') + `export type ${nom} = ${ecrireType(checker, symbole)};`
+        : '') + `export type ${name} = ${writeType(checker, symbol)};`
     );
   }
 }
 
-if (manquants > 0) {
-  console.error(`\n${manquants} type(s) manquant(s) : rien n'est écrit.`);
+if (missingKeys > 0) {
+  console.error(`\n${missingKeys} type(s) manquant(s) : rien n'est écrit.`);
   process.exit(1);
 }
 
-const corps = morceaux.join('\n\n');
-const empreinte = createHash('sha256').update(corps).digest('hex').slice(0, 12);
+const body = chunks.join('\n\n');
+const fingerprint = createHash('sha256')
+  .update(body)
+  .digest('hex')
+  .slice(0, 12);
 
-const entete = `/**
+const header = `/**
  * Le contrat de l'API Kettle — ENGENDRÉ, NE PAS MODIFIER À LA MAIN.
  *
  * Produit par \`npm run contract:build\` dans kettleapp-api, depuis les
@@ -178,39 +181,39 @@ const entete = `/**
  * reporter le fichier ici. Le modifier ici ne changerait rien à ce que l'API
  * envoie — cela ferait seulement mentir les types.
  *
- * Empreinte : ${empreinte}
+ * Empreinte : ${fingerprint}
  */
 
 `;
 
-const fichier = entete + corps + '\n';
+const file = header + body + '\n';
 
 mkdirSync(join(__dirname, '..', '..', 'contract'), { recursive: true });
 
 // Passé par le formateur avant d'être écrit : un type profond s'imprime sur
 // une seule ligne, et le front le versionne — il doit se relire.
-const formate = (contenu: string): string => {
-  const brouillon = join(__dirname, '..', '..', 'contract', '.brouillon.ts');
-  writeFileSync(brouillon, contenu, 'utf8');
-  execFileSync('npx', ['prettier', '--write', brouillon], { stdio: 'ignore' });
-  const sortie = readFileSync(brouillon, 'utf8');
-  execFileSync('rm', ['-f', brouillon]);
-  return sortie;
+const formatType = (source: string): string => {
+  const draft = join(__dirname, '..', '..', 'contract', '.brouillon.ts');
+  writeFileSync(draft, source, 'utf8');
+  execFileSync('npx', ['prettier', '--write', draft], { stdio: 'ignore' });
+  const output = readFileSync(draft, 'utf8');
+  execFileSync('rm', ['-f', draft]);
+  return output;
 };
 
-const attendu = formate(fichier);
+const expected = formatType(file);
 
 if (process.argv.includes('--check')) {
-  const actuel = existsSync(SORTIE) ? readFileSync(SORTIE, 'utf8') : '';
-  if (actuel === attendu) {
+  const current = existsSync(OUTPUT) ? readFileSync(OUTPUT, 'utf8') : '';
+  if (current === expected) {
     console.log(
-      `contract/kettle-contract.ts est à jour (empreinte ${empreinte})`
+      `contract/kettle-contract.ts est à jour (empreinte ${fingerprint})`
     );
     process.exit(0);
   }
   console.error(
-    actuel
-      ? `contract/kettle-contract.ts est périmé : les schémas donnent ${empreinte}.`
+    current
+      ? `contract/kettle-contract.ts est périmé : les schémas donnent ${fingerprint}.`
       : 'contract/kettle-contract.ts est absent.'
   );
   console.error(
@@ -219,8 +222,6 @@ if (process.argv.includes('--check')) {
   process.exit(1);
 }
 
-writeFileSync(SORTIE, attendu, 'utf8');
-console.log(
-  `${morceaux.length} types publiés dans contract/kettle-contract.ts`
-);
-console.log(`empreinte ${empreinte}`);
+writeFileSync(OUTPUT, expected, 'utf8');
+console.log(`${chunks.length} types publiés dans contract/kettle-contract.ts`);
+console.log(`empreinte ${fingerprint}`);

@@ -92,11 +92,11 @@ export const applyRoundsDone = <B extends { order: number }>(
 ): (B & { performedRounds?: number })[] => {
   if (!entries || entries.length === 0) return blocks;
 
-  const parBloc = new Map<number, number>();
-  entries.forEach((e) => parBloc.set(e.blockOrder, e.rounds));
+  const byBlock = new Map<number, number>();
+  entries.forEach((e) => byBlock.set(e.blockOrder, e.rounds));
 
   return blocks.map((block) => {
-    const tours = parBloc.get(block.order);
-    return tours === undefined ? block : { ...block, performedRounds: tours };
+    const rounds = byBlock.get(block.order);
+    return rounds === undefined ? block : { ...block, performedRounds: rounds };
   });
 };

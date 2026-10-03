@@ -46,7 +46,7 @@ const ok = (label: string, cond: boolean, extra = '') => {
 };
 
 const oid = () => new Types.ObjectId();
-const cles = (o: unknown) => Object.keys(o as object).sort();
+const keys = (o: unknown) => Object.keys(o as object).sort();
 
 /**
  * Parser en nommant ce qui n'a pas passé.
@@ -56,7 +56,7 @@ const cles = (o: unknown) => Object.keys(o as object).sort();
  * contrat. Ici l'échec est une assertion comme une autre, et elle porte le
  * chemin du champ.
  */
-const conforme = <S extends z.ZodType>(
+const parses = <S extends z.ZodType>(
   label: string,
   schema: S,
   data: unknown
@@ -74,7 +74,7 @@ const conforme = <S extends z.ZodType>(
 console.log('\n── un identifiant sort en chaîne, une date en ISO');
 
 {
-  const sortie = exercisePayload.parse({
+  const output = exercisePayload.parse({
     _id: oid(),
     name: 'Goblet Squat',
     createdBy: oid(),
@@ -84,13 +84,13 @@ console.log('\n── un identifiant sort en chaîne, une date en ISO');
   });
   ok(
     "l'identifiant devient une chaîne de 24 caractères",
-    typeof sortie._id === 'string' && /^[0-9a-f]{24}$/.test(sortie._id),
-    String(sortie._id)
+    typeof output._id === 'string' && /^[0-9a-f]{24}$/.test(output._id),
+    String(output._id)
   );
   ok(
     '  → la date devient une chaîne ISO',
-    sortie.createdAt === '2026-03-07T10:00:00.000Z',
-    String(sortie.createdAt)
+    output.createdAt === '2026-03-07T10:00:00.000Z',
+    String(output.createdAt)
   );
   ok(
     '  → une chaîne ISO déjà formée passe inchangée',
@@ -104,8 +104,8 @@ console.log('\n── un identifiant sort en chaîne, une date en ISO');
   );
   ok(
     '  → et le `__v` de Mongoose ne sort pas',
-    !('__v' in sortie),
-    cles(sortie).join(' ')
+    !('__v' in output),
+    keys(output).join(' ')
   );
 }
 
@@ -152,13 +152,13 @@ console.log("\n── le bilan ne sort plus avec les clés qu'il ne déclare pas
     __v: 0,
   });
 
-  const sortie = conforme(
+  const output = parses(
     'un vrai document passe le contrat',
     completedSessionPayload,
     document
   );
-  if (!sortie) throw new Error('le bilan ne passe pas : le reste est muet');
-  for (const interne of [
+  if (!output) throw new Error('le bilan ne passe pas : le reste est muet');
+  for (const internal of [
     'clientId',
     'programId',
     '__v',
@@ -166,46 +166,46 @@ console.log("\n── le bilan ne sort plus avec les clés qu'il ne déclare pas
     'updatedAt',
   ]) {
     ok(
-      `  \`${interne}\` ne sort pas`,
-      !(interne in sortie),
-      cles(sortie).join(' ')
+      `  \`${internal}\` ne sort pas`,
+      !(internal in output),
+      keys(output).join(' ')
     );
   }
   ok(
     'ce que les écrans lisent survit',
-    sortie.originalSessionId.length === 24 &&
-      sortie.sessionOrder === 2 &&
-      sortie.sessionName === 'Haut du corps' &&
-      sortie.feedback?.effort === 3 &&
-      sortie.clientNotes === 'Bien passé.' &&
-      sortie.completedAt === '2026-09-28T18:30:00.000Z',
-    cles(sortie).join(' ')
+    output.originalSessionId.length === 24 &&
+      output.sessionOrder === 2 &&
+      output.sessionName === 'Haut du corps' &&
+      output.feedback?.effort === 3 &&
+      output.clientNotes === 'Bien passé.' &&
+      output.completedAt === '2026-09-28T18:30:00.000Z',
+    keys(output).join(' ')
   );
   ok(
     '  → y compris la charge notée, au fond de deux tableaux',
-    sortie.blocks[0].exercises[0].performed?.sets[0].weight === 26,
-    JSON.stringify(sortie.blocks[0].exercises[0].performed)
+    output.blocks[0].exercises[0].performed?.sets[0].weight === 26,
+    JSON.stringify(output.blocks[0].exercises[0].performed)
   );
   ok(
     "  → et l'instantané de l'exercice, qui reste un objet libre",
-    typeof sortie.blocks[0].exercises[0].exercise.name === 'string',
-    JSON.stringify(sortie.blocks[0].exercises[0].exercise)
+    typeof output.blocks[0].exercises[0].exercise.name === 'string',
+    JSON.stringify(output.blocks[0].exercises[0].exercise)
   );
 
   // Les deux chemins imbriqués que Mongoose ne laisse jamais absents.
   ok(
     'un `metrics` vide ne devient pas un bilan à cinq axes',
-    sortie.metrics === undefined,
-    JSON.stringify(sortie.metrics)
+    output.metrics === undefined,
+    JSON.stringify(output.metrics)
   );
   ok(
     '  → un `customMetric` vide non plus',
-    sortie.blocks[0].exercises[0].customMetric === undefined,
-    JSON.stringify(sortie.blocks[0].exercises[0].customMetric)
+    output.blocks[0].exercises[0].customMetric === undefined,
+    JSON.stringify(output.blocks[0].exercises[0].customMetric)
   );
 
   // Et remplis, ils survivent : le filtre ne doit pas emporter la donnée.
-  const rempli = conforme(
+  const filled = parses(
     'un bilan rempli passe aussi',
     completedSessionPayload,
     CompletedSession.hydrate({
@@ -234,13 +234,13 @@ console.log("\n── le bilan ne sort plus avec les clés qu'il ne déclare pas
   );
   ok(
     '  → un ancien bilan à cinq axes se relit toujours',
-    rempli?.metrics?.stress === 2,
-    JSON.stringify(rempli?.metrics)
+    filled?.metrics?.stress === 2,
+    JSON.stringify(filled?.metrics)
   );
   ok(
     '  → et une mesure libre aussi',
-    rempli?.blocks[0].exercises[0].customMetric?.unit === 'm',
-    JSON.stringify(rempli?.blocks[0].exercises[0].customMetric)
+    filled?.blocks[0].exercises[0].customMetric?.unit === 'm',
+    JSON.stringify(filled?.blocks[0].exercises[0].customMetric)
   );
 }
 
@@ -286,40 +286,36 @@ console.log('\n── la séance et le programme perdent leurs clés internes');
   // puis `formatSession` remplace `exerciseId` par l'exercice entier. C'est
   // donc un objet ordinaire qu'il faut éprouver ici — et un `customMetric`
   // vide y prend la forme qu'il a en base, `{}`.
-  const sortie = conforme(
-    'une séance passe le contrat',
-    sessionPayload,
-    session
-  );
-  if (!sortie) throw new Error('la séance ne passe pas : le reste est muet');
+  const output = parses('une séance passe le contrat', sessionPayload, session);
+  if (!output) throw new Error('la séance ne passe pas : le reste est muet');
   ok(
     '`programId` ne sort pas de la séance',
-    !('programId' in sortie),
-    cles(sortie).join(' ')
+    !('programId' in output),
+    keys(output).join(' ')
   );
   ok(
     "  → le `_id` du bloc sort, lui : l'atelier le renvoie tel quel",
-    typeof sortie.blocks[0]._id === 'string',
-    String(sortie.blocks[0]._id)
+    typeof output.blocks[0]._id === 'string',
+    String(output.blocks[0]._id)
   );
   ok(
     '  → les jours conseillés survivent',
-    JSON.stringify(sortie.suggestedDays) === '[0,3]',
-    JSON.stringify(sortie.suggestedDays)
+    JSON.stringify(output.suggestedDays) === '[0,3]',
+    JSON.stringify(output.suggestedDays)
   );
   ok(
     "  → et le `__v` de l'exercice imbriqué non plus",
-    !('__v' in sortie.blocks[0].exercises[0].exercise),
-    cles(sortie.blocks[0].exercises[0].exercise).join(' ')
+    !('__v' in output.blocks[0].exercises[0].exercise),
+    keys(output.blocks[0].exercises[0].exercise).join(' ')
   );
 
   ok(
     "  → et le `customMetric` vide d'un exercice prescrit disparaît",
-    sortie.blocks[0].exercises[0].customMetric === undefined,
-    JSON.stringify(sortie.blocks[0].exercises[0].customMetric)
+    output.blocks[0].exercises[0].customMetric === undefined,
+    JSON.stringify(output.blocks[0].exercises[0].customMetric)
   );
 
-  const programme = conforme('le programme passe le contrat', programPayload, {
+  const program = parses('le programme passe le contrat', programPayload, {
     _id: oid(),
     clientId: oid(),
     createdAt: new Date(),
@@ -329,8 +325,8 @@ console.log('\n── la séance et le programme perdent leurs clés internes');
   });
   ok(
     '`clientId` ne sort pas du programme',
-    !!programme && !('clientId' in programme),
-    cles(programme).join(' ')
+    !!program && !('clientId' in program),
+    keys(program).join(' ')
   );
 }
 
@@ -338,7 +334,7 @@ console.log('\n── la séance et le programme perdent leurs clés internes');
 console.log('\n── une ligne de liste ne porte pas une adresse e-mail');
 
 {
-  const sortie = clientRowPayload.parse({
+  const output = clientRowPayload.parse({
     _id: oid(),
     firstName: 'Sarah',
     lastName: 'Martin',
@@ -350,15 +346,15 @@ console.log('\n── une ligne de liste ne porte pas une adresse e-mail');
   });
   ok(
     "l'adresse e-mail ne sort pas de la liste des clients",
-    !('email' in sortie),
-    cles(sortie).join(' ')
+    !('email' in output),
+    keys(output).join(' ')
   );
   ok(
     '  → ce qui ordonne la liste survit',
-    sortie.unseenCount === 2 &&
-      sortie.lastEffort === 4 &&
-      sortie.lastCompletedAt === '2026-09-20T07:00:00.000Z',
-    JSON.stringify(sortie)
+    output.unseenCount === 2 &&
+      output.lastEffort === 4 &&
+      output.lastCompletedAt === '2026-09-20T07:00:00.000Z',
+    JSON.stringify(output)
   );
   ok(
     '  → une absence reste une absence',
@@ -374,7 +370,7 @@ console.log('\n── une ligne de liste ne porte pas une adresse e-mail');
 console.log("\n── la création d'un coach ne renvoie plus deux documents");
 
 {
-  const sortie = createdCoachPayload.parse({
+  const output = createdCoachPayload.parse({
     status: 'success',
     message: 'Coach créé avec succès',
     coach: {
@@ -388,8 +384,8 @@ console.log("\n── la création d'un coach ne renvoie plus deux documents");
   });
   ok(
     'le coach créé ne porte que de quoi le nommer',
-    cles(sortie.coach).join(' ') === '_id email firstName lastName',
-    cles(sortie.coach).join(' ')
+    keys(output.coach).join(' ') === '_id email firstName lastName',
+    keys(output.coach).join(' ')
   );
 }
 
@@ -397,7 +393,7 @@ console.log("\n── la création d'un coach ne renvoie plus deux documents");
 console.log('\n── un champ requis qui manque est un défaut, pas une réponse');
 
 {
-  const sansRole = userPayload.safeParse({
+  const withoutRole = userPayload.safeParse({
     id: oid(),
     email: 'a@b.c',
     isAdmin: false,
@@ -407,13 +403,14 @@ console.log('\n── un champ requis qui manque est un défaut, pas une répons
   });
   ok(
     'le schéma refuse un compte sans `isClient`',
-    !sansRole.success,
-    sansRole.success ? 'accepté' : sansRole.error.issues[0].path.join('.')
+    !withoutRole.success,
+    withoutRole.success ? 'accepté' : withoutRole.error.issues[0].path.join('.')
   );
   ok(
     '  → et nomme le champ qui manque',
-    !sansRole.success && sansRole.error.issues[0].path.join('.') === 'isClient',
-    sansRole.success ? '' : sansRole.error.issues[0].path.join('.')
+    !withoutRole.success &&
+      withoutRole.error.issues[0].path.join('.') === 'isClient',
+    withoutRole.success ? '' : withoutRole.error.issues[0].path.join('.')
   );
 }
 
@@ -448,17 +445,17 @@ const main = async () => {
 
   {
     const r = await fetch(`${base}/conforme`);
-    const corps = await r.json();
+    const body = await r.json();
     ok(
       'une réponse conforme part sans ce qui lui est étranger',
-      r.status === 200 && JSON.stringify(corps) === '{"a":"x"}',
-      `${r.status} ${JSON.stringify(corps)}`
+      r.status === 200 && JSON.stringify(body) === '{"a":"x"}',
+      `${r.status} ${JSON.stringify(body)}`
     );
   }
 
   {
     const r = await fetch(`${base}/hors-contrat`);
-    const corps = (await r.json()) as { status?: string; message?: string };
+    const body = (await r.json()) as { status?: string; message?: string };
     ok(
       'une réponse hors contrat donne 500, pas un 200 tronqué',
       r.status === 500,
@@ -471,9 +468,9 @@ const main = async () => {
     );
     ok(
       '  → sans rien dire du contrat au client',
-      corps.message === 'Erreur interne' &&
-        !JSON.stringify(corps).includes('"a"'),
-      JSON.stringify(corps)
+      body.message === 'Erreur interne' &&
+        !JSON.stringify(body).includes('"a"'),
+      JSON.stringify(body)
     );
   }
 
