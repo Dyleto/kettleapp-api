@@ -9,7 +9,7 @@
  * reporter le fichier ici. Le modifier ici ne changerait rien à ce que l'API
  * envoie — cela ferait seulement mentir les types.
  *
- * Empreinte : 90b4468b820e
+ * Empreinte : 1f06dad2f4fe
  */
 
 export type CustomMetricPayload = { value: number; unit: string };
@@ -82,6 +82,26 @@ export type ExercisePayload = {
   usageCount?: number | undefined;
 };
 
+/**
+ * Les onze formats, nommés.
+ *
+ * Dérivé du bloc plutôt que réécrit : le front en a besoin pour ses
+ * exhaustivités — un `switch` sur le type d'un bloc doit cesser de compiler
+ * le jour où un format s'ajoute.
+ */
+export type BlockTypePayload =
+  | 'warmup'
+  | 'emom'
+  | 'every'
+  | 'amrap'
+  | 'timecap'
+  | 'chipper'
+  | 'classic'
+  | 'tabata'
+  | 'onoff'
+  | 'pyramid'
+  | 'ladder';
+
 export type BlockExercisePayload = {
   exercise: {
     _id: string;
@@ -104,7 +124,18 @@ export type BlockExercisePayload = {
 
 export type SessionBlockPayload = {
   _id: string;
-  type: string;
+  type:
+    | 'warmup'
+    | 'emom'
+    | 'every'
+    | 'amrap'
+    | 'timecap'
+    | 'chipper'
+    | 'classic'
+    | 'tabata'
+    | 'onoff'
+    | 'pyramid'
+    | 'ladder';
   order: number;
   exercises: {
     exercise: {
@@ -141,7 +172,18 @@ export type SessionPayload = {
   order: number;
   blocks: {
     _id: string;
-    type: string;
+    type:
+      | 'warmup'
+      | 'emom'
+      | 'every'
+      | 'amrap'
+      | 'timecap'
+      | 'chipper'
+      | 'classic'
+      | 'tabata'
+      | 'onoff'
+      | 'pyramid'
+      | 'ladder';
     order: number;
     exercises: {
       exercise: {
@@ -188,7 +230,18 @@ export type ProgramPayload = {
     order: number;
     blocks: {
       _id: string;
-      type: string;
+      type:
+        | 'warmup'
+        | 'emom'
+        | 'every'
+        | 'amrap'
+        | 'timecap'
+        | 'chipper'
+        | 'classic'
+        | 'tabata'
+        | 'onoff'
+        | 'pyramid'
+        | 'ladder';
       order: number;
       exercises: {
         exercise: {
@@ -237,7 +290,18 @@ export type ClientProgramPayload = {
       order: number;
       blocks: {
         _id: string;
-        type: string;
+        type:
+          | 'warmup'
+          | 'emom'
+          | 'every'
+          | 'amrap'
+          | 'timecap'
+          | 'chipper'
+          | 'classic'
+          | 'tabata'
+          | 'onoff'
+          | 'pyramid'
+          | 'ladder';
         order: number;
         exercises: {
           exercise: {
@@ -605,7 +669,18 @@ export type ClientDetailsPayload = {
       order: number;
       blocks: {
         _id: string;
-        type: string;
+        type:
+          | 'warmup'
+          | 'emom'
+          | 'every'
+          | 'amrap'
+          | 'timecap'
+          | 'chipper'
+          | 'classic'
+          | 'tabata'
+          | 'onoff'
+          | 'pyramid'
+          | 'ladder';
         order: number;
         exercises: {
           exercise: {

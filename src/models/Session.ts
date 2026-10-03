@@ -6,28 +6,16 @@ import { model, Schema, Types, Document } from 'mongoose';
  * Ce n'est pas une liste ouverte : chaque valeur a son rendu dans l'éditeur,
  * son minuteur dans le mode guidé et sa façon de s'écrire. En ajouter un veut
  * dire passer par ces trois endroits.
- */
-export type BlockType =
-  | 'warmup'
-  | 'emom'
-  | 'every'
-  | 'amrap'
-  | 'timecap'
-  | 'chipper'
-  | 'classic'
-  | 'tabata'
-  | 'onoff'
-  | 'pyramid'
-  | 'ladder';
-
-/**
- * Les formats de bloc, en une liste que Mongoose et Zod partagent.
  *
- * Écrire l'énumération deux fois — une pour le type, une pour la validation —
- * les ferait diverger au premier format ajouté, et le symptôme serait un bloc
- * que le coach peut créer mais que l'API refuse.
+ * `as const` n'est pas une coquetterie : c'est ce qui laisse le type se
+ * dériver de la liste. La liste était écrite deux fois — une fois en union
+ * pour le type, une fois en tableau pour Mongoose et Zod — ce que le
+ * commentaire d'alors donnait pourtant comme le défaut à éviter. Et la
+ * seconde écriture coûtait plus que sa redondance : `z.enum(BLOCK_TYPES)`
+ * sur un `BlockType[]` ne voit plus que `string`, si bien que le contrat
+ * publiait un `type: string` et que le front perdait son exhaustivité.
  */
-export const BLOCK_TYPES: BlockType[] = [
+export const BLOCK_TYPES = [
   'warmup',
   'emom',
   'every',
@@ -39,7 +27,10 @@ export const BLOCK_TYPES: BlockType[] = [
   'onoff',
   'pyramid',
   'ladder',
-];
+] as const;
+
+/** Le type se dérive de la liste, jamais l'inverse. */
+export type BlockType = (typeof BLOCK_TYPES)[number];
 
 /**
  * Un exercice tel qu'il est prescrit dans un bloc.
@@ -150,7 +141,9 @@ const blockExerciseSchema = new Schema(
 
 const sessionBlockSchema = new Schema(
   {
-    type: { type: String, enum: BLOCK_TYPES, required: true },
+    // Recopié : Mongoose attend un tableau modifiable, et la liste est
+    // maintenant figée pour que le type s'en dérive.
+    type: { type: String, enum: [...BLOCK_TYPES], required: true },
     label: { type: String, trim: true },
     order: { type: Number, required: true },
     notes: { type: String },

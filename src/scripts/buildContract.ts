@@ -54,6 +54,7 @@ const PUBLIES = [
   [
     'program.contract',
     [
+      'BlockTypePayload',
       'BlockExercisePayload',
       'SessionBlockPayload',
       'SessionPayload',

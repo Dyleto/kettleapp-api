@@ -35,7 +35,7 @@ export const blockExercisePayload = z.object({
  */
 export const sessionBlockPayload = z.object({
   _id: id,
-  type: z.enum(BLOCK_TYPES as [string, ...string[]]),
+  type: z.enum(BLOCK_TYPES),
   label: z.string().optional(),
   order: z.number(),
   notes: z.string().optional(),
@@ -88,6 +88,14 @@ export const clientProgramPayload = z.object({ program: programPayload });
 
 export type BlockExercisePayload = z.infer<typeof blockExercisePayload>;
 export type SessionBlockPayload = z.infer<typeof sessionBlockPayload>;
+/**
+ * Les onze formats, nommés.
+ *
+ * Dérivé du bloc plutôt que réécrit : le front en a besoin pour ses
+ * exhaustivités — un `switch` sur le type d'un bloc doit cesser de compiler
+ * le jour où un format s'ajoute.
+ */
+export type BlockTypePayload = SessionBlockPayload['type'];
 export type SessionPayload = z.infer<typeof sessionPayload>;
 export type ProgramPayload = z.infer<typeof programPayload>;
 export type ClientProgramPayload = z.infer<typeof clientProgramPayload>;

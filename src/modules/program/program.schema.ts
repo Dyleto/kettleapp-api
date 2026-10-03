@@ -31,7 +31,7 @@ const blockExerciseSchema = z.object({
 
 const sessionBlockSchema = z.object({
   _id: z.string().optional(),
-  type: z.enum(BLOCK_TYPES as [string, ...string[]]),
+  type: z.enum(BLOCK_TYPES),
   label: z.string().max(100).optional(),
   order: z.number().int().min(1),
   notes: z.string().max(1000).optional(),
