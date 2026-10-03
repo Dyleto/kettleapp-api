@@ -23,14 +23,14 @@ import Exercise from '../models/Exercise';
 import { copySessionToClient } from '../modules/program/program.controller';
 
 const main = async () => {
-  let green = 0;
-  let red = 0;
+  let okCount = 0;
+  let failCount = 0;
   const ok = (label: string, condition: boolean, preuve = '') => {
     console.log(
       `${condition ? 'OK  ' : 'FAIL'}  ${label}${preuve ? ' — ' + preuve : ''}`
     );
-    if (condition) green += 1;
-    else red += 1;
+    if (condition) okCount += 1;
+    else failCount += 1;
   };
 
   let mongo;
@@ -102,11 +102,26 @@ const main = async () => {
   const targetProgram = await Program.create({ clientId: targetClient._id });
   await Session.create({ programId: targetProgram._id, order: 1, blocks: [] });
 
-  /** Appelle le contrôleur et rend ce qu'il a répondu, ou l'erreur levée. */
+  /**
+   * Appelle le contrôleur et attend ce qu'il a répondu, ou l'erreur levée.
+   *
+   * On n'attend pas l'appel, on attend la réponse — et c'est tout le piège.
+   * `catchAsync` rend `void` : Express n'attend jamais le retour d'un
+   * contrôleur, il attend qu'on écrive dans `res`. Un `await` sur l'appel
+   * rendait donc la main avant que le contrôleur ait touché à la base, et les
+   * seize assertions de ce script mesuraient un état vide. Six passaient
+   * quand même, en comparant du vide à du vide : c'est la seule chose pire
+   * qu'un rouge.
+   *
+   * Le délai de garde est là pour que, le jour où le contrôleur ne répond
+   * plus du tout, le script le dise au lieu de se figer.
+   */
   const invoke = async (targetId: string, payload: unknown) => {
     let httpStatus = 0;
     let body: unknown = null;
     let error: Error | null = null;
+    let settle!: () => void;
+    const answered = new Promise<void>((resolve) => (settle = resolve));
     const req = {
       params: { clientId: targetId },
       body: payload,
@@ -120,18 +135,31 @@ const main = async () => {
       },
       json(data: unknown) {
         body = data;
+        settle();
         return this;
       },
     };
-    await (
+    (
       copySessionToClient as unknown as (
         q: unknown,
         r: unknown,
         n: (e?: Error) => void
-      ) => Promise<void>
+      ) => void
     )(req, res, (e) => {
       if (e) error = e;
+      settle();
     });
+    let timer: NodeJS.Timeout | undefined;
+    await Promise.race([
+      answered,
+      new Promise<void>((resolve) => {
+        timer = setTimeout(() => {
+          error = new Error('le contrôleur n’a ni répondu ni levé en 5 s');
+          resolve();
+        }, 5000);
+      }),
+    ]);
+    clearTimeout(timer);
     return { httpStatus, body, error };
   };
 
@@ -255,10 +283,10 @@ const main = async () => {
     `${after} séances`
   );
 
-  console.log(`\n${green} OK · ${red} FAIL`);
+  console.log(`\n${okCount} OK · ${failCount} FAIL`);
   await mongoose.disconnect();
   await mongo.stop();
-  process.exit(red > 0 ? 1 : 0);
+  process.exit(failCount > 0 ? 1 : 0);
 };
 
 void main();
