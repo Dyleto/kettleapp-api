@@ -2,6 +2,11 @@ import { Request, Response } from 'express';
 import { catchAsync } from '../../shared/utils/catchAsync';
 import { coachOf } from '../../shared/middleware/roles';
 import InvitationToken from '../../models/InvitationToken';
+import { respond } from '../../shared/utils/respond';
+import {
+  activeInvitationPayload,
+  generatedInvitationPayload,
+} from '../../contract';
 
 /**
  * Le lien d'invitation actif, s'il y en a un — sans en créer.
@@ -20,7 +25,10 @@ export const getActiveInvitation = catchAsync(
       expiresAt: { $gt: new Date() },
     }).sort({ expiresAt: -1 });
 
-    res.status(200).json(
+    respond(
+      res,
+      200,
+      activeInvitationPayload,
       invitationToken
         ? {
             token: invitationToken.token,
@@ -68,7 +76,7 @@ export const generateInvitation = catchAsync(
       });
     }
 
-    res.status(200).json({
+    respond(res, 200, generatedInvitationPayload, {
       status: 'success',
       message: "Lien d'invitation généré avec succès",
       token: invitationToken.token,

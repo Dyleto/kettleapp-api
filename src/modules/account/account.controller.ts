@@ -13,6 +13,8 @@ import { AppError } from '../../shared/utils/AppError';
 import logger from '../../shared/utils/logger';
 import { getErrorMessage } from '../../shared/utils/errors';
 import { PORTE_DES_DONNEES_DE_SANTE } from '../client/client.controller';
+import { respond } from '../../shared/utils/respond';
+import { accountSummaryPayload, messagePayload } from '../../contract';
 
 // GET /api/account
 //
@@ -75,7 +77,7 @@ export const getAccount = catchAsync(async (req: Request, res: Response) => {
       }
     : null;
 
-  res.status(200).json({ asClient, asCoach });
+  respond(res, 200, accountSummaryPayload, { asClient, asCoach });
 });
 
 // DELETE /api/account
@@ -188,5 +190,5 @@ export const deleteAccount = catchAsync(async (req: Request, res: Response) => {
   res.clearCookie('connect.sid');
 
   logger.info(`[${rid}] deleteAccount: success`, { userId });
-  res.status(200).json({ message: 'Compte supprimé' });
+  respond(res, 200, messagePayload, { message: 'Compte supprimé' });
 });

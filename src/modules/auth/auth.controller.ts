@@ -16,6 +16,12 @@ import {
 import logger from '../../shared/utils/logger';
 import { TokenPayload } from 'google-auth-library';
 import { getErrorMessage } from '../../shared/utils/errors';
+import { respond } from '../../shared/utils/respond';
+import {
+  authPayload,
+  inviteCheckPayload,
+  messagePayload,
+} from '../../contract';
 
 // ─── Google OAuth (code flow) ─────────────────────────────────────────────────
 
@@ -126,7 +132,7 @@ export const googleAuthCallback = catchAsync(
       userId: user._id,
       email: user.email,
     });
-    res.status(200).json({ status: 'success', user: builtUser });
+    respond(res, 200, authPayload, { status: 'success', user: builtUser });
   }
 );
 
@@ -202,7 +208,7 @@ export const googleOneTapCallback = catchAsync(
       userId: user._id,
       email: user.email,
     });
-    res.status(200).json({ status: 'success', user: builtUser });
+    respond(res, 200, authPayload, { status: 'success', user: builtUser });
   }
 );
 
@@ -238,7 +244,7 @@ export const getMe = catchAsync(async (req: Request, res: Response) => {
   }
 
   const builtUser = await buildUser(user);
-  res.status(200).json({ status: 'success', user: builtUser });
+  respond(res, 200, authPayload, { status: 'success', user: builtUser });
 });
 
 // ─── Invitation ───────────────────────────────────────────────────────────────
@@ -281,7 +287,7 @@ export const verifyInviteToken = catchAsync(
       throw new AppError('Coach introuvable', 500);
     }
 
-    res.status(200).json({
+    respond(res, 200, inviteCheckPayload, {
       valid: true,
       coach: {
         id: coach._id,
@@ -314,7 +320,7 @@ export const logout = catchAsync(async (req: Request, res: Response) => {
 
   res.clearCookie('connect.sid');
   logger.info(`[${rid}] logout: success`, { userId });
-  res.status(200).json({ message: 'Déconnexion réussie' });
+  respond(res, 200, messagePayload, { message: 'Déconnexion réussie' });
 });
 
 // ─── Connexion de développement (jamais en production) ──────────────────────
@@ -351,5 +357,5 @@ export const devLogin = catchAsync(async (req: Request, res: Response) => {
 
   const builtUser = await buildUser(user);
   logger.info(`[${rid}] devLogin: success`, { userId: user._id });
-  res.status(200).json({ status: 'success', user: builtUser });
+  respond(res, 200, authPayload, { status: 'success', user: builtUser });
 });

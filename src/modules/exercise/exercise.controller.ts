@@ -6,6 +6,9 @@ import Client from '../../models/Client';
 import Exercise from '../../models/Exercise';
 import Session from '../../models/Session';
 import { Types } from 'mongoose';
+import { respond } from '../../shared/utils/respond';
+import { exercisePayload } from '../../contract';
+import { z } from 'zod';
 
 /**
  * Dans combien de séances du coach chaque exercice apparaît.
@@ -73,7 +76,10 @@ export const getExercises = catchAsync(async (req: Request, res: Response) => {
     getExerciseUsage(coach._id as Types.ObjectId),
   ]);
 
-  res.status(200).json(
+  respond(
+    res,
+    200,
+    z.array(exercisePayload),
     exercises.map((exercise) => ({
       ...exercise,
       usageCount: usage.get(String(exercise._id)) ?? 0,
@@ -96,7 +102,7 @@ export const getExerciseDetails = catchAsync(
     const exercise = await Exercise.findOne({ _id: id, createdBy: coach._id });
     if (!exercise) throw new AppError('Exercice non trouvé', 404);
 
-    res.status(200).json(exercise);
+    respond(res, 200, exercisePayload, exercise);
   }
 );
 
@@ -120,7 +126,7 @@ export const createExercise = catchAsync(
       createdBy: coach._id,
     });
 
-    res.status(201).json(exercise);
+    respond(res, 201, exercisePayload, exercise);
   }
 );
 
@@ -147,7 +153,7 @@ export const updateExercise = catchAsync(
 
     await exercise.save();
 
-    res.status(200).json(exercise);
+    respond(res, 200, exercisePayload, exercise);
   }
 );
 

@@ -7,6 +7,13 @@ import CompletedSession from '../../models/CompletedSession';
 import { catchAsync } from '../../shared/utils/catchAsync';
 import { AppError } from '../../shared/utils/AppError';
 import logger from '../../shared/utils/logger';
+import { respond } from '../../shared/utils/respond';
+import {
+  adminStatsPayload,
+  adminCoachPayload,
+  createdCoachPayload,
+} from '../../contract';
+import { z } from 'zod';
 
 /**
  * Créer un coach, ou promouvoir un compte existant.
@@ -50,11 +57,15 @@ export const createCoach = catchAsync(async (req: Request, res: Response) => {
     email,
   });
 
-  res.status(201).json({
+  respond(res, 201, createdCoachPayload, {
     status: 'success',
     message: 'Coach créé avec succès',
-    coach,
-    user,
+    coach: {
+      _id: coach._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    },
   });
 });
 
@@ -84,7 +95,7 @@ export const getStats = catchAsync(async (_req: Request, res: Response) => {
     Exercise.countDocuments(),
   ]);
 
-  res.status(200).json({
+  respond(res, 200, adminStatsPayload, {
     coachCount,
     clientCount,
     sessionCount,
@@ -151,5 +162,5 @@ export const getCoaches = catchAsync(async (_req: Request, res: Response) => {
     { $sort: { createdAt: -1 } },
   ]);
 
-  res.status(200).json(coaches);
+  respond(res, 200, z.array(adminCoachPayload), coaches);
 });

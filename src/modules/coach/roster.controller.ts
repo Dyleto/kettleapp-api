@@ -11,6 +11,14 @@ import {
   PopulatedSession,
   formatSession,
 } from '../../shared/utils/sessionFormatter';
+import { respond } from '../../shared/utils/respond';
+import {
+  clientRowPayload,
+  clientDetailsPayload,
+  completedSessionPayload,
+  successPayload,
+} from '../../contract';
+import { z } from 'zod';
 
 /**
  * La liste des clients d'un coach, avec de quoi la trier.
@@ -108,7 +116,7 @@ export const getClients = catchAsync(async (req: Request, res: Response) => {
     },
   ]);
 
-  res.status(200).json(clients);
+  respond(res, 200, z.array(clientRowPayload), clients);
 });
 
 /**
@@ -146,7 +154,7 @@ export const getClientDetails = catchAsync(
       viewedByCoach: { $ne: true },
     });
 
-    res.status(200).json({
+    respond(res, 200, clientDetailsPayload, {
       _id: client._id,
       firstName: client.userId.firstName,
       lastName: client.userId.lastName,
@@ -185,7 +193,7 @@ export const getClientHistory = catchAsync(
       .skip((page - 1) * limit)
       .limit(limit);
 
-    res.status(200).json(history);
+    respond(res, 200, z.array(completedSessionPayload), history);
   }
 );
 
@@ -209,6 +217,6 @@ export const markHistoryAsViewed = catchAsync(
       { $set: { viewedByCoach: true } }
     );
 
-    res.status(200).json({ status: 'success' });
+    respond(res, 200, successPayload, { status: 'success' });
   }
 );

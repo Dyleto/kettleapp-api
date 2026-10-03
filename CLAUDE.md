@@ -51,6 +51,31 @@ Le contexte d'une requête se lit avec `coachOf(res)` / `clientOf(res)`, jamais
 avec une assertion de type : un garde oublié doit donner un 403, pas un
 TypeError.
 
+## Le contrat de sortie
+
+Rien ne quitte l'API sans passer par un schéma de `src/contract/`. Un
+contrôleur ne répond pas avec `res.json(...)` mais avec
+`respond(res, status, schema, data)` : Zod ne garde que les clés déclarées,
+donc ce qui n'est pas au contrat ne sort pas.
+
+Ce n'est pas une vérification mais un filtre. Avant lui, `res.json(history)`
+envoyait des documents Mongoose entiers — `clientId`, `programId`, `__v`, les
+dates internes — que personne ne lisait. Ne pas revenir là-dessus : un champ
+qui doit sortir s'ajoute au schéma, jamais à côté.
+
+Un écart donne un 500, pas une réponse tronquée : une réponse à laquelle il
+manque un champ est un défaut du serveur, et le client n'a aucun moyen de le
+savoir.
+
+Les types se dérivent des schémas (`z.infer`), et c'est de là que viennent
+ceux du front. Deux descriptions de la même charge utile divergent toujours.
+
+Attention aux chemins imbriqués de Mongoose — un objet littéral dans un
+schéma, sans `new Schema`. Sur un document hydraté ils ne sont jamais
+absents : Mongoose les rend comme des objets dont les clés valent
+`undefined`. `vacant()` les ramène à `undefined` ; sans lui, `metrics` et
+`customMetric` faisaient répondre 500 à tout l'historique.
+
 ## La discipline de vérification
 
 Un vert ne vaut que si on l'a cassé. Pour chaque mécanisme vérifié, on le
@@ -62,8 +87,12 @@ Un script de sabotage doit vérifier qu'il a bien saboté quelque chose.
 ## Les vérifications
 
 `npm run verify` lance tout ce qui tourne sans base de données : le
-gestionnaire d'erreurs, les gardes, la validation, les plafonds. La CI
-l'appelle.
+gestionnaire d'erreurs, les gardes, la validation, les plafonds, le contrat
+de sortie. La CI l'appelle.
+
+`verify:contract` éprouve de vrais documents Mongoose et non des objets
+ordinaires : c'est la seule façon de voir les chemins imbriqués vides, qui
+n'existent que sur un document.
 
 `verify:copy` et `verify:rounds` exigent `mongodb-memory-server`, qui
 télécharge un binaire MongoDB : ils ne sont pas branchés à la CI et n'ont

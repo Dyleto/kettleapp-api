@@ -9,6 +9,9 @@ import {
   PopulatedSession,
   formatSession,
 } from '../../shared/utils/sessionFormatter';
+import { respond } from '../../shared/utils/respond';
+import { sessionPayload } from '../../contract';
+import { z } from 'zod';
 
 /**
  * Enregistrer le programme d'un client, tel que l'atelier l'a écrit.
@@ -35,9 +38,12 @@ export const updateProgramSessions = catchAsync(
       savedCount: saved.length,
     });
 
-    res
-      .status(200)
-      .json((saved as unknown as PopulatedSession[]).map(formatSession));
+    respond(
+      res,
+      200,
+      z.array(sessionPayload),
+      (saved as unknown as PopulatedSession[]).map(formatSession)
+    );
   }
 );
 
@@ -78,6 +84,11 @@ export const copySessionToClient = catchAsync(
       newSessionId: copy._id,
     });
 
-    res.status(201).json(formatSession(copy as unknown as PopulatedSession));
+    respond(
+      res,
+      201,
+      sessionPayload,
+      formatSession(copy as unknown as PopulatedSession)
+    );
   }
 );

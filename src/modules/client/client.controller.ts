@@ -15,6 +15,14 @@ import {
 import { HEALTH_CONSENT_VERSION } from '../../shared/constants/consent';
 import { applyPerformed, applyRoundsDone } from './completedSession.service';
 import { isValidObjectId } from 'mongoose';
+import { respond } from '../../shared/utils/respond';
+import {
+  clientProgramPayload,
+  clientHistoryPayload,
+  completedWrapperPayload,
+  healthConsentPayload,
+} from '../../contract';
+import { z } from 'zod';
 
 // GET /api/client/program
 export const getProgram = catchAsync(async (req: Request, res: Response) => {
@@ -27,7 +35,7 @@ export const getProgram = catchAsync(async (req: Request, res: Response) => {
     .populate('blocks.exercises.exerciseId')
     .lean();
 
-  res.status(200).json({
+  respond(res, 200, clientProgramPayload, {
     program: {
       ...program.toObject(),
       sessions: (sessions as unknown as PopulatedSession[]).map(formatSession),
@@ -154,7 +162,7 @@ export const completeSession = catchAsync(
       sessionId,
       completedId: completed._id,
     });
-    res.status(201).json({ completed });
+    respond(res, 201, completedWrapperPayload, { completed });
   }
 );
 
@@ -170,7 +178,7 @@ export const getHistory = catchAsync(async (req: Request, res: Response) => {
     .skip((page - 1) * limit)
     .limit(limit);
 
-  res.status(200).json({ history });
+  respond(res, 200, clientHistoryPayload, { history });
 });
 
 // PATCH /api/client/sessions/completed/:id
@@ -226,7 +234,7 @@ export const updateCompletedSession = catchAsync(
       clientId: client._id,
       completedId: completed._id,
     });
-    res.status(200).json({ completed });
+    respond(res, 200, completedWrapperPayload, { completed });
   }
 );
 
@@ -288,6 +296,8 @@ export const setHealthConsent = catchAsync(
       purgedSessions: efface,
     });
 
-    res.status(200).json({ healthConsent: client.healthConsent });
+    respond(res, 200, z.object({ healthConsent: healthConsentPayload }), {
+      healthConsent: client.healthConsent,
+    });
   }
 );

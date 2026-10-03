@@ -18,7 +18,8 @@
     "verify:hardening": "ts-node src/scripts/verifyHardening.ts",
     "verify:validation": "ts-node src/scripts/verifyValidation.ts",
     "verify:guards": "ts-node src/scripts/verifyGuards.ts",
-    "verify": "npm run verify:errors && npm run verify:guards && npm run verify:validation && npm run verify:hardening"
+    "verify": "npm run verify:errors && npm run verify:guards && npm run verify:validation && npm run verify:hardening && npm run verify:contract",
+    "verify:contract": "ts-node src/scripts/verifyContract.ts"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
