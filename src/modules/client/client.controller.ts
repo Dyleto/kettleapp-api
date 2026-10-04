@@ -263,12 +263,11 @@ export const CARRIES_HEALTH_DATA = {
 export const setHealthConsent = catchAsync(
   async (req: Request, res: Response) => {
     const client = clientOf(res);
-    const { granted } = req.body;
+    // `granted` est un booléen parce que `setHealthConsentSchema` l'exige :
+    // le `typeof granted !== 'boolean'` qui vivait ici disait la même chose
+    // une seconde fois, et à un endroit où la règle du projet ne le veut pas.
+    const { granted } = req.body as { granted: boolean };
     const rid = req.requestId ?? '?';
-
-    if (typeof granted !== 'boolean') {
-      throw new AppError('Réponse attendue : accepté ou refusé', 400);
-    }
 
     client.healthConsent = {
       granted,

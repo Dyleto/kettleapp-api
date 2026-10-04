@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import { validate } from '../../shared/middleware/validate';
+import { devRoutesEnabled } from '../../shared/config/env';
 import { authLimiter } from '../../shared/middleware/rateLimits';
-import { googleAuthSchema } from './auth.schema';
+import {
+  googleAuthSchema,
+  googleOneTapSchema,
+  verifyInviteTokenSchema,
+} from './auth.schema';
 import {
   googleAuthCallback,
   googleOneTapCallback,
@@ -19,12 +24,24 @@ router.post(
   validate(googleAuthSchema),
   googleAuthCallback
 );
-router.post('/google-onetap', authLimiter, googleOneTapCallback);
+router.post(
+  '/google-onetap',
+  authLimiter,
+  validate(googleOneTapSchema),
+  googleOneTapCallback
+);
 router.get('/me', getMe);
 router.post('/logout', logout);
-router.get('/verify-invite-token', verifyInviteToken);
+router.get(
+  '/verify-invite-token',
+  validate(verifyInviteTokenSchema),
+  verifyInviteToken
+);
 
-if (process.env.NODE_ENV !== 'production') {
+// Une connexion sans mot de passe, et seulement là où on l'a voulu. La
+// condition vit dans `shared/config/env` pour que son test l'exerce au lieu
+// de la recopier — voir `devRoutesEnabled`.
+if (devRoutesEnabled()) {
   router.post('/dev-login', devLogin);
 }
 

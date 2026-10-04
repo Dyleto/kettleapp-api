@@ -259,10 +259,11 @@ export const getMe = catchAsync(async (req: Request, res: Response) => {
  */
 export const verifyInviteToken = catchAsync(
   async (req: Request, res: Response) => {
-    const token = req.query.token as string;
+    // Le jeton est une chaîne non vide parce que `verifyInviteTokenSchema`
+    // l'exige : l'assertion de type et le `if (!token)` qui vivaient ici
+    // faisaient le travail du schéma, moins bien et sans message français.
+    const { token } = req.query as { token: string };
     const rid = req.requestId ?? '?';
-
-    if (!token) throw new AppError('Token manquant', 400);
 
     let invitationToken;
     try {

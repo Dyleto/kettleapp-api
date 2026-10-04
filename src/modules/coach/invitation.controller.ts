@@ -54,7 +54,9 @@ export const getActiveInvitation = catchAsync(
 export const generateInvitation = catchAsync(
   async (req: Request, res: Response) => {
     const coach = coachOf(res);
-    const expiresIn = req.body.expiresIn || 7; // en jours
+    // Le défaut et les bornes vivent dans `generateInvitationSchema` : le
+    // `|| 7` qui tenait lieu de garde ici acceptait n'importe quel nombre.
+    const { expiresIn } = req.body as { expiresIn: number };
     const minimumDaysLeft = 5;
 
     // Un jeton encore valide au moins cinq jours est réutilisé tel quel.

@@ -58,6 +58,15 @@ validée, donc un contrôleur qui lit `req.body` lit quelque chose qui a
 correspondu à un schéma. Ne jamais revenir en arrière là-dessus — c'est ce qui
 ferme le mass assignment.
 
+`verify:routes` le vérifie plutôt que de l'espérer : il parcourt la pile des
+vrais routeurs et refuse qu'une route lisant un corps ou un paramètre
+n'embarque pas `validateRequest`. Quatre y échappaient — `/auth/google-onetap`
+qui passait un jeton Google non validé à `google-auth-library`,
+`/client/health-consent` qui est l'écriture la plus sensible juridiquement de
+l'application, `/auth/verify-invite-token`, et `/coach/generate-invitation`,
+dont le `req.body.expiresIn || 7` laissait demander un lien de rattachement
+valide deux siècles.
+
 Le contexte d'une requête se lit avec `coachOf(res)` / `clientOf(res)`, jamais
 avec une assertion de type : un garde oublié doit donner un 403, pas un
 TypeError.
@@ -97,9 +106,17 @@ Un script de sabotage doit vérifier qu'il a bien saboté quelque chose.
 
 ## Les vérifications
 
-`npm run verify` lance tout ce qui tourne sans base de données : le
-gestionnaire d'erreurs, les gardes, la validation, les plafonds, le contrat
-de sortie. La CI l'appelle.
+`npm run verify` lance tout ce qui tourne sans base de données :
+l'environnement, la couverture des routes par les schémas, le gestionnaire
+d'erreurs, les gardes, la validation, les plafonds, le contrat de sortie et
+les tours bouclés. La CI l'appelle. 123 assertions.
+
+`verify:env` éprouve ce qui arrête le démarrage. Le garde précédent laissait
+passer trois choses : un `NODE_ENV` absent — dont dépend l'ouverture de
+`/dev-login`, et le défaut qui aurait l'air prudent est celui qui ouvre la
+porte —, un `SESSION_SECRET` de cinq caractères, et la valeur d'exemple du
+`.env.example`, que le contrôle ne connaissait plus depuis qu'elle avait
+changé.
 
 `verify:contract` éprouve de vrais documents Mongoose et non des objets
 ordinaires : c'est la seule façon de voir les chemins imbriqués vides, qui

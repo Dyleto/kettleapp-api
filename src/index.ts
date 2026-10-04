@@ -1,6 +1,9 @@
+// Doit rester le premier import : il peuple `process.env` pour tous les
+// suivants. Voir `shared/config/loadEnv.ts`.
+import './shared/config/loadEnv';
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import connectDB from './shared/config/db';
 import routes from './routes';
 import cookieParser from 'cookie-parser';
@@ -16,11 +19,12 @@ import mongoose from 'mongoose';
 import logger from './shared/utils/logger';
 import { errorMessage } from './shared/utils/unknownError';
 
-dotenv.config();
-
 import { validateEnv } from './shared/config/env';
 import { AppError } from './shared/utils/AppError';
-validateEnv();
+
+// Avant tout le reste : un environnement invalide doit arrêter le démarrage,
+// pas se découvrir sur une route au hasard.
+const config = validateEnv();
 
 const app = express();
 
@@ -32,7 +36,7 @@ app.set('trust proxy', 1);
 app.use(
   cors({
     origin: [
-      process.env.FRONTEND_URL || 'http://localhost:5173',
+      config.FRONTEND_URL,
       'https://kettleapp.fr',
       'https://www.kettleapp.fr',
     ],
@@ -76,22 +80,21 @@ app.get('/health', (req, res) => {
 app.use(
   session({
     name: 'connect.sid',
-    secret: process.env.SESSION_SECRET!,
+    secret: config.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     proxy: true,
     store: MongoStore.create({
-      mongoUrl: process.env.MONGO_URI,
+      mongoUrl: config.MONGO_URI,
       touchAfter: 24 * 3600, // Lazy session update (1 day)
       collectionName: 'auth_sessions',
     }),
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: config.NODE_ENV === 'production',
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      sameSite: config.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 day
-      domain:
-        process.env.NODE_ENV === 'production' ? '.kettleapp.fr' : undefined,
+      domain: config.NODE_ENV === 'production' ? '.kettleapp.fr' : undefined,
     },
   })
 );
@@ -108,7 +111,7 @@ app.use('*', (req, res, next) => {
 
 app.use(globalErrorHandler);
 
-const PORT = process.env.PORT || 3000;
+const PORT = config.PORT;
 
 /**
  * Démarrer, et s'arrêter.

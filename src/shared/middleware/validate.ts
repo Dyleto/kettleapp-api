@@ -24,9 +24,19 @@ import { ZodType, ZodError } from 'zod';
  * La valeur validée est donc réécrite. À partir d'ici, un contrôleur qui lit
  * `req.body` lit quelque chose qui a correspondu à un schéma.
  */
-export const validate =
-  (schema: ZodType) =>
-  async (req: Request, res: Response, next: NextFunction) => {
+export const validate = (schema: ZodType) => {
+  /**
+   * Nommé, et pas une flèche anonyme : `verifyRouteCoverage` parcourt la pile
+   * des routeurs pour vérifier qu'aucune route lisant un corps ou un
+   * paramètre n'a oublié son schéma, et il la reconnaît par ce nom. Trois
+   * routes l'avaient oublié — dont `/auth/google-onetap` et
+   * `/client/health-consent`.
+   */
+  return async function validateRequest(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const parsed = (await schema.parseAsync({
         body: req.body,
@@ -66,3 +76,4 @@ export const validate =
       return next(error);
     }
   };
+};

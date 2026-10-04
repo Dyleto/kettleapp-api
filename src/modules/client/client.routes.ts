@@ -3,6 +3,7 @@ import { requireClient } from '../../shared/middleware/roles';
 import { validate } from '../../shared/middleware/validate';
 import {
   completeSessionSchema,
+  setHealthConsentSchema,
   updateCompletedSessionSchema,
 } from './client.schema';
 import * as clientController from './client.controller';
@@ -31,6 +32,10 @@ router.patch(
 router.get('/history', clientController.getHistory);
 
 // DONNÉES DE SANTÉ
-router.put('/health-consent', clientController.setHealthConsent);
+router.put(
+  '/health-consent',
+  validate(setHealthConsentSchema),
+  clientController.setHealthConsent
+);
 
 export default router;

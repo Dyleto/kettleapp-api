@@ -111,3 +111,19 @@ export const updateCompletedSessionSchema = z.object({
       message: 'Aucune modification fournie',
     }),
 });
+
+/**
+ * L'accord — ou le refus — de partager ce qu'on déclare de son état.
+ *
+ * C'est l'écriture la plus sensible juridiquement de l'application, et elle
+ * n'avait aucun schéma : le contrôleur rattrapait avec un
+ * `typeof granted !== 'boolean'` écrit à la main. La règle du projet veut
+ * qu'un contrôleur lise ce qui a correspondu à un schéma, et le refus doit
+ * être aussi net que l'accord — un `"false"` en chaîne n'est pas un refus,
+ * c'est une requête mal formée.
+ */
+export const setHealthConsentSchema = z.object({
+  body: z.object({
+    granted: z.boolean({ message: 'Réponse attendue : accepté ou refusé' }),
+  }),
+});

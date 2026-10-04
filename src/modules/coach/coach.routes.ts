@@ -8,6 +8,7 @@ import {
   withClientIdParam,
 } from '../../shared/schemas/params.schema';
 import * as invitation from './invitation.controller';
+import { generateInvitationSchema } from './invitation.schema';
 import * as roster from './roster.controller';
 import * as exercise from '../exercise/exercise.controller';
 import * as program from '../program/program.controller';
@@ -34,6 +35,7 @@ router.get('/invitation', invitation.getActiveInvitation);
 router.post(
   '/generate-invitation',
   invitationLimiter,
+  validate(generateInvitationSchema),
   invitation.generateInvitation
 );
 
