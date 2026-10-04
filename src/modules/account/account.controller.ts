@@ -11,7 +11,7 @@ import InvitationToken from '../../models/InvitationToken';
 import { catchAsync } from '../../shared/utils/catchAsync';
 import { AppError } from '../../shared/utils/AppError';
 import logger from '../../shared/utils/logger';
-import { getErrorMessage } from '../../shared/utils/errors';
+import { getErrorMessage } from '../../shared/utils/unknownError';
 import { CARRIES_HEALTH_DATA } from '../client/client.controller';
 import { respond } from '../../shared/utils/respond';
 import { accountSummaryPayload, messagePayload } from '../../contract';

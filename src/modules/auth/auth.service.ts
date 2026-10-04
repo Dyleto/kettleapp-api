@@ -6,7 +6,10 @@ import Client from '../../models/Client';
 import InvitationToken from '../../models/InvitationToken';
 import { AppError } from '../../shared/utils/AppError';
 import logger from '../../shared/utils/logger';
-import { errorMessage, httpErrorBody } from '../../shared/utils/unknownError';
+import {
+  getErrorMessage,
+  httpErrorBody,
+} from '../../shared/utils/unknownError';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -33,7 +36,7 @@ export const verifyGoogleCredential = async (
     });
   } catch (err) {
     logger.error('verifyGoogleCredential: Google token verification failed', {
-      error: errorMessage(err),
+      error: getErrorMessage(err),
     });
     throw new AppError('Token Google One Tap invalide', 401);
   }
@@ -88,7 +91,7 @@ export const exchangeGoogleCode = async (
       redirectUri,
     });
     throw new AppError(
-      `Échange de code Google échoué: ${errorDescription ?? errorMessage(err)}`,
+      `Échange de code Google échoué: ${errorDescription ?? getErrorMessage(err)}`,
       401
     );
   }
@@ -101,7 +104,7 @@ export const exchangeGoogleCode = async (
     });
   } catch (err) {
     logger.error('exchangeGoogleCode: id_token verification failed', {
-      error: errorMessage(err),
+      error: getErrorMessage(err),
     });
     throw new AppError('Token Google invalide', 401);
   }

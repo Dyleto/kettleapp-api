@@ -17,7 +17,7 @@ import { httpLogger } from './shared/middleware/httpLogger';
 import mongoSanitize from 'express-mongo-sanitize';
 import mongoose from 'mongoose';
 import logger from './shared/utils/logger';
-import { errorMessage } from './shared/utils/unknownError';
+import { getErrorMessage } from './shared/utils/unknownError';
 
 import { validateEnv } from './shared/config/env';
 import { AppError } from './shared/utils/AppError';
@@ -48,13 +48,11 @@ app.use(
 
 app.use(helmet());
 
-// Sécurité Injection NoSQL
+// Nettoyage des opérateurs MongoDB dans les entrées.
 app.use(mongoSanitize());
 
 app.use(httpLogger);
 
-// Le quota vient après la session pour pouvoir compter par utilisateur plutôt
-// que par adresse — voir `shared/middleware/rateLimits.ts` pour le pourquoi.
 app.use(cookieParser());
 
 /**
@@ -71,12 +69,13 @@ app.use(cookieParser());
  */
 app.use(express.json({ limit: '256kb' }));
 
-// Health check endpoint (avant les autres routes)
+// Avant les autres routes, et sans authentification : c'est l'adresse que
+// la plateforme interroge pour savoir si le service répond.
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Session middleware
+// La session, dans un cookie signé et stocké chez Mongo.
 app.use(
   session({
     name: 'connect.sid',
@@ -86,22 +85,26 @@ app.use(
     proxy: true,
     store: MongoStore.create({
       mongoUrl: config.MONGO_URI,
-      touchAfter: 24 * 3600, // Lazy session update (1 day)
+      // Ne réécrit la session en base qu'une fois par jour : sans cela,
+      // chaque requête d'un client en séance produit une écriture.
+      touchAfter: 24 * 3600,
       collectionName: 'auth_sessions',
     }),
     cookie: {
       secure: config.NODE_ENV === 'production',
       httpOnly: true,
       sameSite: config.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 day
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       domain: config.NODE_ENV === 'production' ? '.kettleapp.fr' : undefined,
     },
   })
 );
 
+// Après la session, pour pouvoir compter par utilisateur plutôt que par
+// adresse — voir `shared/middleware/rateLimits.ts` pour le pourquoi. Le
+// commentaire vivait quarante lignes plus haut, sur `cookieParser`.
 app.use(globalLimiter);
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api', routes);
 
@@ -133,7 +136,7 @@ const start = async () => {
     await connectDB();
   } catch (err) {
     logger.error('La connexion à la base a échoué, le serveur ne démarre pas', {
-      error: errorMessage(err),
+      error: getErrorMessage(err),
     });
     process.exit(1);
   }

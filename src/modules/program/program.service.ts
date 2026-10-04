@@ -3,7 +3,7 @@ import Program, { IProgram } from '../../models/Program';
 import Session, { ISession } from '../../models/Session';
 import { AppError } from '../../shared/utils/AppError';
 import logger from '../../shared/utils/logger';
-import { getErrorMessage } from '../../shared/utils/errors';
+import { getErrorMessage } from '../../shared/utils/unknownError';
 import type { SessionInput } from './program.schema';
 
 /**

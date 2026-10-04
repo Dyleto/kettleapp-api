@@ -12,8 +12,16 @@
  * assertion à chaque appel.
  */
 
-/** Le message, quoi qui ait été lancé. Jamais `undefined`. */
-export const errorMessage = (err: unknown): string => {
+/**
+ * Le message, quoi qui ait été lancé. Jamais `undefined`.
+ *
+ * Il en existait deux : celle-ci et un `getErrorMessage` dans `errors.ts`,
+ * au comportement identique. Deux descriptions de la même chose finissent
+ * par diverger, et le projet refuse cela ailleurs — c'est le nom le plus
+ * utilisé des deux qui a gagné, et le fichier qui abrite déjà
+ * `httpErrorBody`, son voisin naturel.
+ */
+export const getErrorMessage = (err: unknown): string => {
   if (err instanceof Error) return err.message;
   if (typeof err === 'string') return err;
   return String(err);

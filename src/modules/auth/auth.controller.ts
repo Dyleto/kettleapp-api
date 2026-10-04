@@ -15,7 +15,7 @@ import {
 } from './auth.service';
 import logger from '../../shared/utils/logger';
 import { TokenPayload } from 'google-auth-library';
-import { getErrorMessage } from '../../shared/utils/errors';
+import { getErrorMessage } from '../../shared/utils/unknownError';
 import { respond } from '../../shared/utils/respond';
 import {
   authPayload,

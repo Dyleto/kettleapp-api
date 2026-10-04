@@ -91,7 +91,13 @@ const withoutQuotes = (block) =>
     .replace(/«[^»]*»/g, ' ')
     .replace(/`[^`]*`/g, ' ')
     .replace(/"[^"]*"/g, ' ')
-    .replace(/(^|[^A-Za-zÀ-ÿ])'[^'\n]{2,}'/g, '$1 ');
+    .replace(/(^|[^A-Za-zÀ-ÿ])'[^'\n]{2,}'/g, '$1 ')
+    // Une parenthèse courte est un exemple, pas de la prose. Le commentaire
+    // « Strips accents from a string (é→e, à→a, ç→c…) » est anglais, et
+    // l'accent de son exemple concluait au français — le troisième angle mort,
+    // ressorti par la porte des parenthèses. Au-delà de quarante caractères on
+    // laisse : c'est une incise, et une incise se rédige.
+    .replace(/\([^()]{1,40}\)/g, ' ');
 
 const files = [];
 const walk = (path) => {
