@@ -79,12 +79,11 @@ export const replaceProgramSessions = async (
         .select('_id')
         .session(dbSession);
 
-      const existingIds = existing.map((s) =>
-        (s._id as Types.ObjectId).toString()
-      );
-      const incomingIds = sessions
-        .filter((s) => s._id)
-        .map((s) => s._id as string);
+      const existingIds = existing.map((s) => s._id.toString());
+      // `flatMap` plutôt que `filter` puis `map` : TypeScript ne sait pas
+      // qu'un `filter` a écarté les `undefined`, et il fallait le lui affirmer
+      // par un cast. Le tableau conditionnel dit la même chose sans mentir.
+      const incomingIds = sessions.flatMap((s) => (s._id ? [s._id] : []));
       const idsToDelete = existingIds.filter((id) => !incomingIds.includes(id));
 
       if (idsToDelete.length > 0) {

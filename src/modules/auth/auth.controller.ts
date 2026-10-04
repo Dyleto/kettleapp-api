@@ -111,7 +111,7 @@ export const googleAuthCallback = catchAsync(
       await user.save();
     }
 
-    req.session.userId = (user._id as string).toString();
+    req.session.userId = user._id.toString();
     try {
       await new Promise<void>((resolve, reject) => {
         req.session.save((err) => (err ? reject(err) : resolve()));
@@ -187,7 +187,7 @@ export const googleOneTapCallback = catchAsync(
       await user.save();
     }
 
-    req.session.userId = (user._id as string).toString();
+    req.session.userId = user._id.toString();
     try {
       await new Promise<void>((resolve, reject) => {
         req.session.save((err) => (err ? reject(err) : resolve()));
@@ -350,7 +350,7 @@ export const devLogin = catchAsync(async (req: Request, res: Response) => {
     throw new AppError('Utilisateur introuvable', 404);
   }
 
-  req.session.userId = (user._id as string).toString();
+  req.session.userId = user._id.toString();
   await new Promise<void>((resolve, reject) => {
     req.session.save((err) => (err ? reject(err) : resolve()));
   });
