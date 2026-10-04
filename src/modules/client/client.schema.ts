@@ -141,3 +141,14 @@ export type CompleteSessionBody = z.infer<typeof completeSessionSchema>['body'];
 
 /** Le ressenti, quand il y en a un. */
 export type Feedback = NonNullable<CompleteSessionBody['feedback']>;
+
+/**
+ * Le corps d'une correction de bilan, tel que le schéma l'a façonné.
+ *
+ * Même raison que ci-dessus : le contrôleur lisait `req.body` en vrac, donc
+ * `clientNotes` et `feedback` lui arrivaient en `any` — et c'est justement ce
+ * `feedback` qu'il passe au filtre de consentement santé.
+ */
+export type UpdateCompletedSessionBody = z.infer<
+  typeof updateCompletedSessionSchema
+>['body'];

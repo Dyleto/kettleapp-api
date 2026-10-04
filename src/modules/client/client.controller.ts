@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import { catchAsync } from '../../shared/utils/catchAsync';
 import { AppError } from '../../shared/utils/AppError';
-import type { IClient } from '../../models/Client';
-import type { CompleteSessionBody, Feedback } from './client.schema';
+import type {
+  CompleteSessionBody,
+  UpdateCompletedSessionBody,
+} from './client.schema';
 import { clientOf } from '../../shared/middleware/roles';
 import Program from '../../models/Program';
 import Session from '../../models/Session';
@@ -14,6 +16,11 @@ import {
   PopulatedSession,
 } from '../../shared/utils/sessionFormatter';
 import { HEALTH_CONSENT_VERSION } from '../../shared/constants/consent';
+import {
+  filterFeedback,
+  filterComment,
+  CARRIES_HEALTH_DATA,
+} from './healthConsent.service';
 import { applyPerformed, applyRoundsDone } from './completedSession.service';
 import { isValidObjectId } from 'mongoose';
 import { respond } from '../../shared/utils/respond';
@@ -43,54 +50,6 @@ export const getProgram = catchAsync(async (req: Request, res: Response) => {
     },
   });
 });
-
-/**
- * Le client a-t-il accepté qu'on collecte ses données de santé ?
- *
- * Un accord donné à une version antérieure du texte ne vaut pas pour la
- * version en vigueur : la question se repose, et en attendant la réponse on
- * s'en tient au plus prudent.
- */
-const sharingAllowed = (client: IClient): boolean =>
-  client.healthConsent?.granted === true &&
-  client.healthConsent.version === HEALTH_CONSENT_VERSION;
-
-/**
- * Ne garde du ressenti que ce qu'on a le droit de garder.
- *
- * `effort` est une mesure d'entraînement : c'est avec elle que le coach règle
- * la charge, elle reste. Les étiquettes — douleur, maladie, sommeil — sont des
- * données de santé : sans consentement explicite et à jour, on ne les écrit
- * pas. Pas « on les cache au coach » : on ne les collecte pas.
- *
- * Le filtre est ici et pas seulement dans l'interface. Une case cachée à
- * l'écran reste envoyable à la main, et c'est le serveur qui répond de ce
- * qu'il écrit.
- */
-const filterFeedback = (feedback: Feedback, client: IClient): Feedback => {
-  if (sharingAllowed(client)) return feedback;
-
-  // Les étiquettes et le commentaire relèvent de la santé : sans accord, ils
-  // ne sont pas enregistrés. L'effort, lui, reste — c'est une mesure
-  // d'entraînement.
-  const { tags, note, ...rest } = feedback;
-  void tags;
-  void note;
-  return rest;
-};
-
-/**
- * Le commentaire libre tombe sous la même règle.
- *
- * « J'ai mal au genou depuis mardi » est une donnée de santé, que le champ
- * s'appelle « douleur » ou « commentaire ». On ne peut pas trier au cas par
- * cas, donc on ne collecte pas.
- */
-const filterComment = (
-  clientNotes: unknown,
-  client: IClient
-): string | undefined =>
-  sharingAllowed(client) ? (clientNotes as string | undefined) : undefined;
 
 // POST /api/client/sessions/:sessionId/complete
 export const completeSession = catchAsync(
@@ -195,7 +154,7 @@ export const updateCompletedSession = catchAsync(
     const client = clientOf(res);
     const { id } = req.params;
     const { feedback, performed, roundsDone, clientNotes, completedAt } =
-      req.body;
+      req.body as UpdateCompletedSessionBody;
     const rid = req.requestId ?? '?';
 
     if (!isValidObjectId(id)) throw new AppError('Bilan introuvable', 404);
@@ -243,23 +202,6 @@ export const updateCompletedSession = catchAsync(
     respond(res, 200, completedWrapperPayload, { completed });
   }
 );
-
-/**
- * Les bilans qui portent effectivement une donnée de santé.
- *
- * `feedback.tags.0` plutôt que `feedback.tags` : un tableau vide existe sans
- * rien contenir, et le compter ferait annoncer au client qu'on va effacer des
- * séances où il n'y a rien à effacer.
- *
- * La même condition sert à compter avant et à effacer ensuite — sans quoi
- * l'avertissement pourrait annoncer un nombre que la purge ne tient pas.
- */
-export const CARRIES_HEALTH_DATA = {
-  $or: [
-    { 'feedback.tags.0': { $exists: true } },
-    { clientNotes: { $exists: true, $ne: '' } },
-  ],
-};
 
 // PUT /api/client/health-consent
 //
