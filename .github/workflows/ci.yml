@@ -45,6 +45,24 @@ jobs:
       # périmés, et rien ne le dirait — ni ici, ni là-bas.
       - run: npm run contract:check
 
+  units:
+    name: Les tests unitaires
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Vitest a remplacé trois scripts `verify:*` qui portaient chacun leur
+      # copie d'un `ok(label, condition)`. Il a trouvé deux défauts dans
+      # l'heure : un paramètre par défaut qui rendait le cas « NODE_ENV absent »
+      # inexprimable, et `/dev-login` sans schéma — que le script ne voyait pas
+      # parce que la route n'était pas montée sous son ts-node.
+      - run: npm test
+
   checks:
     name: Vérifications à l'exécution
     runs-on: ubuntu-latest

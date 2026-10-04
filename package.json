@@ -12,16 +12,15 @@
     "format": "prettier --write src contract",
     "seed:exercises": "ts-node src/scripts/seedExercises.ts",
     "verify:copy": "ts-node src/scripts/verifyCopySession.ts",
-    "verify:rounds": "ts-node src/scripts/verifyRoundsDone.ts",
-    "verify:env": "ts-node src/scripts/verifyEnv.ts",
-    "verify:routes": "ts-node src/scripts/verifyRouteCoverage.ts",
     "verify:errors": "ts-node src/scripts/verifyErrorHandler.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "format:check": "prettier --check src contract",
     "verify:hardening": "ts-node src/scripts/verifyHardening.ts",
     "verify:validation": "ts-node src/scripts/verifyValidation.ts",
     "verify:guards": "ts-node src/scripts/verifyGuards.ts",
-    "verify": "npm run verify:env && npm run verify:routes && npm run verify:errors && npm run verify:guards && npm run verify:validation && npm run verify:hardening && npm run verify:contract && npm run verify:rounds",
+    "verify": "npm run verify:errors && npm run verify:guards && npm run verify:validation && npm run verify:hardening && npm run verify:contract",
     "verify:contract": "ts-node src/scripts/verifyContract.ts",
     "contract:build": "ts-node src/scripts/buildContract.ts",
     "contract:check": "ts-node src/scripts/buildContract.ts --check"
@@ -55,13 +54,16 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/supertest": "^7.2.1",
     "eslint": "^10.5.0",
     "eslint-config-prettier": "^10.1.8",
     "mongodb-memory-server": "^11.2.0",
     "nodemon": "^3.1.0",
     "prettier": "^3.8.4",
+    "supertest": "^7.3.1",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript-eslint": "^8.61.1"
+    "typescript-eslint": "^8.61.1",
+    "vitest": "^5.0.3"
   }
 }

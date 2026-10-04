@@ -92,14 +92,18 @@ export type Env = z.infer<typeof schema>;
  * aucune assertion, puisque l'assertion éprouvait une copie. Un test qui
  * duplique le mécanisme n'éprouve pas le mécanisme.
  *
- * Lit `process.env` directement et non la configuration validée : la
- * condition est évaluée à l'import des routes, avant `validateEnv()`. Et le
- * test est positif — ce qui n'est pas nommément un environnement de travail
- * reste fermé, y compris une variable absente ou vide.
+ * Le test est positif : ce qui n'est pas nommément un environnement de
+ * travail reste fermé, y compris une variable absente ou vide.
+ *
+ * Prend `nodeEnv` sans valeur par défaut, et l'appelant lui passe
+ * `process.env.NODE_ENV`. Avec un paramètre par défaut, passer `undefined`
+ * explicitement le déclenchait : le cas « la variable est absente » était donc
+ * inexprimable, et l'assertion qui prétendait le couvrir ne passait que
+ * lorsque l'environnement d'exécution n'avait pas la variable. Vitest l'a
+ * montré en la posant à `test`, comme il le fait toujours.
  */
-export const devRoutesEnabled = (
-  nodeEnv: string | undefined = process.env.NODE_ENV
-): boolean => ['development', 'test'].includes(nodeEnv ?? '');
+export const devRoutesEnabled = (nodeEnv: string | undefined): boolean =>
+  ['development', 'test'].includes(nodeEnv ?? '');
 
 let parsed: Env | null = null;
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { objectId } from '../../shared/schemas/params.schema';
 
 /**
  * Ce que le front renvoie au retour de Google.
@@ -47,5 +48,21 @@ export const verifyInviteTokenSchema = z.object({
     token: z
       .string({ message: "Le jeton d'invitation est requis" })
       .min(1, { message: "Le jeton d'invitation est requis" }),
+  }),
+});
+
+/**
+ * La connexion de confort, qui n'existe qu'en développement.
+ *
+ * Elle lisait `req.body.userId` sans schéma et le passait à `findById` : un
+ * objet y produisait une erreur de cast, donc un 500. Aucune porte ouverte —
+ * `findById` n'accepte pas d'opérateur — mais la règle du projet ne fait pas
+ * d'exception pour une route de confort, et c'est Vitest qui l'a montrée :
+ * sous `NODE_ENV=test` la route est montée, alors qu'elle ne l'était pas sous
+ * le ts-node du script de vérification.
+ */
+export const devLoginSchema = z.object({
+  body: z.object({
+    userId: objectId.optional(),
   }),
 });

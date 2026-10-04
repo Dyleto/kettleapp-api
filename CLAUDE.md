@@ -106,17 +106,23 @@ Un script de sabotage doit vérifier qu'il a bien saboté quelque chose.
 
 ## Les vérifications
 
-`npm run verify` lance tout ce qui tourne sans base de données :
-l'environnement, la couverture des routes par les schémas, le gestionnaire
-d'erreurs, les gardes, la validation, les plafonds, le contrat de sortie et
-les tours bouclés. La CI l'appelle. 123 assertions.
+`npm test` (Vitest) éprouve la logique pure et la structure : ce qui arrête le
+démarrage, la couverture des routes par les schémas, et ce que décide
+`applyRoundsDone`. 40 tests, sans base de données.
 
-`verify:env` éprouve ce qui arrête le démarrage. Le garde précédent laissait
-passer trois choses : un `NODE_ENV` absent — dont dépend l'ouverture de
-`/dev-login`, et le défaut qui aurait l'air prudent est celui qui ouvre la
-porte —, un `SESSION_SECRET` de cinq caractères, et la valeur d'exemple du
-`.env.example`, que le contrôle ne connaissait plus depuis qu'elle avait
-changé.
+Il remplace trois scripts `verify:*`, et il a trouvé deux défauts dans l'heure
+qui a suivi son installation — ce qui dit assez ce que son absence coûtait.
+Un paramètre par défaut sur `devRoutesEnabled` rendait le cas « NODE_ENV
+absent » inexprimable : passer `undefined` relisait `process.env`, et
+l'assertion qui prétendait couvrir ce cas ne passait que parce que ts-node
+n'avait pas la variable. Et `/dev-login` n'avait aucun schéma, invisible au
+script puisque la route n'était pas montée sous son ts-node — alors que
+Vitest pose `NODE_ENV=test`.
+
+`npm run verify` garde les cinq suites qui montent une application Express :
+le gestionnaire d'erreurs, les gardes, la validation, les plafonds et le
+contrat de sortie. 85 assertions, et elles attendent leur tour de conversion —
+chacune porte encore sa propre copie d'un `ok(label, condition)`.
 
 `verify:contract` éprouve de vrais documents Mongoose et non des objets
 ordinaires : c'est la seule façon de voir les chemins imbriqués vides, qui
