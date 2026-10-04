@@ -137,6 +137,15 @@ fonction pure, le script n'ouvre aucune connexion. Il est dans la chaîne
 `verify`, donc dans la CI. La confusion lui a coûté de ne jamais tourner,
 alors que rien ne l'en empêchait.
 
+## Ce que ce dépôt ne fait pas
+
+Il n'envoie pas d'e-mail. `src/emails/` a porté deux gabarits React Email —
+`ClientJoined` et `ProgramUpdated` — que rien n'importait, et quatre
+dépendances de production avec eux : `resend`, les deux `@react-email` et
+`react`. Les gabarits sont dans l'historique si la fonctionnalité revient
+(`git log -- src/emails`), mais l'arbre de production ne porte plus un
+framework d'interface pour du code que le serveur n'exécute jamais.
+
 ## Ce qui garde le projet
 
 La CI (`.github/workflows/ci.yml`) lance à chaque poussée : `typecheck`,
