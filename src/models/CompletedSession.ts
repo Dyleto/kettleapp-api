@@ -31,7 +31,22 @@ export interface IPerformed {
  * que l'exercice portait à l'époque, champs d'alors compris.
  */
 export interface IBlockExerciseSnapshot {
-  exercise: Record<string, unknown>;
+  /**
+   * L'exercice tel qu'il était ce jour-là, forme non contrainte.
+   *
+   * `object` et non `Record<string, unknown>`, et ce n'est pas un relâchement :
+   * ce qu'on fige ici est un `IExercise` que `formatSession` rend complet,
+   * parce que c'est ce que le coach doit lire dans sa réponse. Une interface
+   * sans signature d'index n'est pas assignable à un `Record`, et lui en
+   * ajouter une affaiblirait `IExercise` partout ailleurs. Mongoose 9 a
+   * resserré le typage de `create()` et rendu l'écart visible ; Mongoose 8
+   * l'acceptait en silence.
+   *
+   * Le contrat de sortie, lui, le décrit en `z.record(z.string(),
+   * z.unknown())` : c'est la forme sur le fil, et elle a le droit d'être
+   * décrite plus précisément que celle en base.
+   */
+  exercise: object;
   order: number;
   sets?: number;
   restBetweenSets?: number;

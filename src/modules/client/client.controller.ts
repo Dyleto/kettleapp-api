@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { catchAsync } from '../../shared/utils/catchAsync';
 import { AppError } from '../../shared/utils/AppError';
 import type { IClient } from '../../models/Client';
+import type { CompleteSessionBody, Feedback } from './client.schema';
 import { clientOf } from '../../shared/middleware/roles';
 import Program from '../../models/Program';
 import Session from '../../models/Session';
@@ -66,14 +67,16 @@ const sharingAllowed = (client: IClient): boolean =>
  * l'écran reste envoyable à la main, et c'est le serveur qui répond de ce
  * qu'il écrit.
  */
-const filterFeedback = (feedback: unknown, client: IClient): unknown => {
-  if (!feedback || typeof feedback !== 'object') return feedback;
+const filterFeedback = (feedback: Feedback, client: IClient): Feedback => {
   if (sharingAllowed(client)) return feedback;
 
-  const { tags, note, ...reste } = feedback as Record<string, unknown>;
+  // Les étiquettes et le commentaire relèvent de la santé : sans accord, ils
+  // ne sont pas enregistrés. L'effort, lui, reste — c'est une mesure
+  // d'entraînement.
+  const { tags, note, ...rest } = feedback;
   void tags;
   void note;
-  return reste;
+  return rest;
 };
 
 /**
@@ -94,6 +97,9 @@ export const completeSession = catchAsync(
   async (req: Request, res: Response) => {
     const client = clientOf(res);
     const { sessionId } = req.params;
+    // Typé depuis le schéma : `validate` a déjà écrit dans `req.body` la
+    // valeur qui lui a correspondu, et la lire en vrac jetait ce qu'il avait
+    // établi.
     const {
       feedback,
       metrics,
@@ -101,7 +107,7 @@ export const completeSession = catchAsync(
       roundsDone,
       clientNotes,
       completedAt,
-    } = req.body;
+    } = req.body as CompleteSessionBody;
     const rid = req.requestId ?? '?';
 
     logger.info(`[${rid}] completeSession: start`, {

@@ -34,7 +34,15 @@ export const getOrCreate = async (
  * l'ancienne valeur resterait en base, pour toujours. La chaîne vide et le
  * tableau vide sont ce qui dit « il n'y en a plus ».
  */
-const toPayload = (input: SessionInput, order: number, programId: unknown) => ({
+// `programId` était typé `unknown`, ce qui n'est pas un type mais un
+// haussement d'épaules. Mongoose 9 refuse de le caster tout seul vers un
+// identifiant, et il a raison : ce qu'on lui passe est toujours un
+// `program._id`.
+const toPayload = (
+  input: SessionInput,
+  order: number,
+  programId: Types.ObjectId
+) => ({
   name: input.name ?? '',
   notes: input.notes,
   suggestedDays: input.suggestedDays ?? [],

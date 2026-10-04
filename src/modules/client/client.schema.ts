@@ -127,3 +127,17 @@ export const setHealthConsentSchema = z.object({
     granted: z.boolean({ message: 'Réponse attendue : accepté ou refusé' }),
   }),
 });
+
+/**
+ * Le corps d'une fin de séance, tel que le schéma l'a façonné.
+ *
+ * Dérivé et non réécrit : le contrôleur lisait `req.body` en vrac, donc ses
+ * champs arrivaient en `unknown` alors que le schéma connaissait déjà leur
+ * forme. Mongoose 9, qui ne caste plus un `unknown` vers un champ typé, a
+ * rendu l'écart visible — mais c'était déjà une entorse à la règle du projet
+ * avant qu'il ne refuse.
+ */
+export type CompleteSessionBody = z.infer<typeof completeSessionSchema>['body'];
+
+/** Le ressenti, quand il y en a un. */
+export type Feedback = NonNullable<CompleteSessionBody['feedback']>;
