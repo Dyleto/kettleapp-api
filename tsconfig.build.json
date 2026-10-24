@@ -1,0 +1,25 @@
+// Ce que le serveur de production a besoin de compiler, et rien de plus.
+//
+// `npm run build` compilait `src/**/*` en entier, donc aussi les quatre
+// fichiers de test et les huit scripts. Les tests importent `vitest`, et
+// `verifyCopySession` importe `mongodb-memory-server` : deux
+// devDependencies. Render lance `npm install && npm run build` avec
+// `NODE_ENV=production`, donc npm écarte les devDependencies — et le build
+// échouait sur treize erreurs de types, dont onze n'étaient que la
+// conséquence des deux modules manquants.
+//
+// Déplacer `mongodb-memory-server` vers `dependencies` fait taire une des
+// deux causes au prix d'un binaire MongoDB téléchargé à chaque déploiement,
+// pour un script que la production n'exécute jamais. C'est le build qui
+// demandait trop, pas la dépendance qui était mal rangée.
+//
+// Rien ici n'est requis par `dist/index.js` : les tests tournent sous Vitest,
+// les scripts sous ts-node. Aucun fichier de `src/` hors tests n'importe
+// quoi que ce soit de `src/scripts/`.
+//
+// `npm run typecheck` garde `tsconfig.json`, qui couvre tout : c'est lui qui
+// doit voir une erreur de types dans un test, pas le build de production.
+{
+  "extends": "./tsconfig.json",
+  "exclude": ["dist", "src/**/*.test.ts", "src/scripts"]
+}

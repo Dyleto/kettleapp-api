@@ -87,3 +87,28 @@ jobs:
       # de ce conteneur interdit le téléchargement — et faire dépendre la CI
       # d'une étape que personne n'a jamais vue passer serait livrer une
       # garantie qu'on n'a pas.
+
+  production:
+    name: Le build de production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      # `--omit=dev` reproduit ce que fait Render : `npm install` avec
+      # `NODE_ENV=production` écarte les devDependencies. Les trois autres
+      # tâches font `npm ci`, donc leur `npm run build` vert ne disait rien du
+      # build qui compte — treize erreurs de types sont parties en production
+      # sur une CI verte, et c'est le journal de déploiement qui les a dites.
+      - run: npm ci --omit=dev
+
+      - run: npm run build
+
+      # Compiler ne suffit pas : une dépendance de production rangée par
+      # erreur dans `devDependencies` passe le compilateur et manque au
+      # premier `require`. Le script charge chaque module produit, et refuse
+      # qu'un test ou un script se retrouve dans `dist/`.
+      - run: npm run verify:production
