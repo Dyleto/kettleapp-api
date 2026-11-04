@@ -13,6 +13,7 @@
     "format": "prettier --write src contract",
     "seed:exercises": "ts-node src/scripts/seedExercises.ts",
     "verify:copy": "ts-node src/scripts/verifyCopySession.ts",
+    "migrate:ladder": "ts-node src/scripts/migratePyramidToLadder.ts",
     "verify:errors": "ts-node src/scripts/verifyErrorHandler.ts",
     "test": "vitest run",
     "test:watch": "vitest",

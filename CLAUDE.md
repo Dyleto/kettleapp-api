@@ -137,6 +137,34 @@ fonction pure, le script n'ouvre aucune connexion. Il est dans la chaîne
 `verify`, donc dans la CI. La confusion lui a coûté de ne jamais tourner,
 alors que rien ne l'en empêchait.
 
+## Les migrations
+
+`migrate:ladder` fusionne « Pyramide » dans « Échelle » : les deux n'étaient
+qu'un format sous deux noms — trois différences, toutes cosmétiques — et
+`pyramid` disparaît de l'énumération.
+
+L'ordre de déploiement n'est pas négociable, et c'est tout l'intérêt d'un
+script plutôt que d'une conversion au premier enregistrement :
+
+1. `npm run migrate:ladder` sur la base de production — à blanc par défaut,
+   `--apply` engage ;
+2. puis seulement la version qui ne connaît plus `pyramid`.
+
+Dans l'autre ordre, un programme resté en `pyramid` ne passe plus le contrat
+de sortie et fait répondre 500 à tout l'écran du client. Le projet avait
+converti `every` vers `emom` au premier enregistrement, mais là l'ancienne
+valeur restait valide ; ici elle cesse de l'être.
+
+Le script migre aussi l'historique. `CompletedSession.blocks[].type` est une
+chaîne libre et y survivrait, mais le front retomberait sur la valeur brute et
+afficherait « pyramid » à un francophone. Ce n'est pas rétro-remplir : rien
+n'est deviné, c'est un format renommé, et ce que le client a fait — le schéma,
+les charges, les tours — n'est pas touché.
+
+Il se vérifie lui-même : il recompte après avoir écrit et sort en erreur s'il
+reste quoi que ce soit. Comme `verify:copy`, il demande une vraie base et ne
+peut pas tourner en CI.
+
 ## Ce que ce dépôt ne fait pas
 
 Il n'envoie pas d'e-mail. `src/emails/` a porté deux gabarits React Email —
