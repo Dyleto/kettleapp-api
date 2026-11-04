@@ -47,10 +47,21 @@ import CompletedSession from '../models/CompletedSession';
 const FROM = 'pyramid';
 const TO = 'ladder';
 
-/** Combien de documents portent encore au moins un bloc à migrer. */
+/**
+ * Combien de documents portent encore au moins un bloc à migrer.
+ *
+ * Sur la collection brute, comme l'écriture, et pour la même raison poussée
+ * un cran plus loin : une fois `pyramid` retiré de `BLOCK_TYPES`, le filtre
+ * typé de Mongoose refuse de chercher cette valeur — le typecheck tombait
+ * ici. Le pilote, lui, ne connaît pas l'énumération, donc le script marche
+ * avant comme après le retrait. C'est ce que son en-tête promettait, et il ne
+ * le tenait pas.
+ */
 const remaining = async () => ({
-  sessions: await Session.countDocuments({ 'blocks.type': FROM }),
-  completed: await CompletedSession.countDocuments({ 'blocks.type': FROM }),
+  sessions: await Session.collection.countDocuments({ 'blocks.type': FROM }),
+  completed: await CompletedSession.collection.countDocuments({
+    'blocks.type': FROM,
+  }),
 });
 
 /**

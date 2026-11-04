@@ -9,7 +9,7 @@
  * reporter le fichier ici. Le modifier ici ne changerait rien à ce que l'API
  * envoie — cela ferait seulement mentir les types.
  *
- * Empreinte : 1f06dad2f4fe
+ * Empreinte : 2f684d79dd4b
  */
 
 export type CustomMetricPayload = { value: number; unit: string };
@@ -99,7 +99,6 @@ export type BlockTypePayload =
   | 'classic'
   | 'tabata'
   | 'onoff'
-  | 'pyramid'
   | 'ladder';
 
 export type BlockExercisePayload = {
@@ -134,7 +133,6 @@ export type SessionBlockPayload = {
     | 'classic'
     | 'tabata'
     | 'onoff'
-    | 'pyramid'
     | 'ladder';
   order: number;
   exercises: {
@@ -182,7 +180,6 @@ export type SessionPayload = {
       | 'classic'
       | 'tabata'
       | 'onoff'
-      | 'pyramid'
       | 'ladder';
     order: number;
     exercises: {
@@ -240,7 +237,6 @@ export type ProgramPayload = {
         | 'classic'
         | 'tabata'
         | 'onoff'
-        | 'pyramid'
         | 'ladder';
       order: number;
       exercises: {
@@ -300,7 +296,6 @@ export type ClientProgramPayload = {
           | 'classic'
           | 'tabata'
           | 'onoff'
-          | 'pyramid'
           | 'ladder';
         order: number;
         exercises: {
@@ -679,7 +674,6 @@ export type ClientDetailsPayload = {
           | 'classic'
           | 'tabata'
           | 'onoff'
-          | 'pyramid'
           | 'ladder';
         order: number;
         exercises: {

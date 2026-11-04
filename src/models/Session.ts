@@ -25,7 +25,6 @@ export const BLOCK_TYPES = [
   'classic',
   'tabata',
   'onoff',
-  'pyramid',
   'ladder',
 ] as const;
 
