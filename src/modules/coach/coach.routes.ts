@@ -20,6 +20,13 @@ import {
   copySessionSchema,
   updateProgramSessionsSchema,
 } from '../program/program.schema';
+import * as template from '../template/template.controller';
+import {
+  createTemplateSchema,
+  importTemplateSchema,
+  renameTemplateSchema,
+  updateTemplateSessionsSchema,
+} from '../template/template.schema';
 
 const router = Router();
 
@@ -64,6 +71,43 @@ router.post(
   '/clients/:clientId/program/sessions/copy',
   validate(withClientIdParam(copySessionSchema.shape.body)),
   program.copySessionToClient
+);
+
+// Le client de l'URL est la destination, comme pour la copie : on importe
+// CHEZ lui, et son programme est remplacé.
+router.post(
+  '/clients/:clientId/program/import',
+  validate(importTemplateSchema),
+  template.importIntoClient
+);
+
+// ── Modèles de programme ──────────────────────────────────────────────────
+//
+// Un modèle n'appartient qu'à son coach, et le garde est dans le service :
+// `getOwnTemplate` cherche par `_id` ET par `coachId`, donc un modèle d'un
+// autre coach est introuvable plutôt qu'interdit. Dire « il existe mais pas
+// pour vous » apprendrait que l'identifiant est bon.
+router.get('/templates', template.listTemplates);
+router.post(
+  '/templates',
+  validate(createTemplateSchema),
+  template.createTemplate
+);
+router.get('/templates/:id', validate(idParamSchema), template.getTemplate);
+router.patch(
+  '/templates/:id',
+  validate(renameTemplateSchema),
+  template.renameTemplate
+);
+router.put(
+  '/templates/:id/sessions',
+  validate(updateTemplateSessionsSchema),
+  template.updateTemplateSessions
+);
+router.delete(
+  '/templates/:id',
+  validate(idParamSchema),
+  template.deleteTemplate
 );
 
 // ── Bibliothèque d'exercices ──────────────────────────────────────────────

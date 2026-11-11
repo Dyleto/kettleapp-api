@@ -9,7 +9,7 @@
  * reporter le fichier ici. Le modifier ici ne changerait rien à ce que l'API
  * envoie — cela ferait seulement mentir les types.
  *
- * Empreinte : 2f684d79dd4b
+ * Empreinte : b6b009bee384
  */
 
 export type CustomMetricPayload = { value: number; unit: string };
@@ -755,6 +755,72 @@ export type AccountSummaryPayload = {
     since: string;
   } | null;
   asCoach: { clientCount: number; since: string } | null;
+};
+
+export type TemplateRowPayload = {
+  _id: string;
+  name: string;
+  sessionCount: number;
+  updatedAt: string;
+};
+
+export type TemplatePayload = {
+  _id: string;
+  name: string;
+  sessions: {
+    _id: string;
+    order: number;
+    blocks: {
+      _id: string;
+      type:
+        | 'warmup'
+        | 'emom'
+        | 'every'
+        | 'amrap'
+        | 'timecap'
+        | 'chipper'
+        | 'classic'
+        | 'tabata'
+        | 'onoff'
+        | 'ladder';
+      order: number;
+      exercises: {
+        exercise: {
+          _id: string;
+          name: string;
+          createdBy: string;
+          createdAt: string;
+          updatedAt: string;
+          description?: string | undefined;
+          videoUrl?: string | undefined;
+          usageCount?: number | undefined;
+        };
+        order: number;
+        sets?: number | undefined;
+        restBetweenSets?: number | undefined;
+        reps?: number | undefined;
+        duration?: number | undefined;
+        customMetric?: { value: number; unit: string } | undefined;
+        note?: string | undefined;
+      }[];
+      label?: string | undefined;
+      notes?: string | undefined;
+      durationMinutes?: number | undefined;
+      intervalMinutes?: number | undefined;
+      rounds?: number | undefined;
+      restBetweenRounds?: number | undefined;
+      workDuration?: number | undefined;
+      restDuration?: number | undefined;
+      repsScheme?: number[] | undefined;
+    }[];
+    createdAt: string;
+    updatedAt: string;
+    name?: string | undefined;
+    notes?: string | undefined;
+    suggestedDays?: number[] | undefined;
+  }[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type AdminStatsPayload = {

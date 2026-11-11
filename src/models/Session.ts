@@ -138,7 +138,15 @@ const blockExerciseSchema = new Schema(
   { _id: false }
 );
 
-const sessionBlockSchema = new Schema(
+/**
+ * Exporté pour le modèle de programme, qui embarque la même forme.
+ *
+ * Une seconde description du même bloc divergerait — c'est déjà arrivé dans ce
+ * projet, sur un `endDate` que l'API n'a jamais envoyé. Le modèle de programme
+ * n'est qu'un programme qu'aucun client ne suit encore : ses blocs sont les
+ * mêmes blocs.
+ */
+export const sessionBlockSchema = new Schema(
   {
     // Recopié : Mongoose attend un tableau modifiable, et la liste est
     // maintenant figée pour que le type s'en dérive.

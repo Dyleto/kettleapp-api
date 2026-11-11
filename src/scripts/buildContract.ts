@@ -87,6 +87,9 @@ const PUBLISHED = [
       'AccountSummaryPayload',
     ],
   ],
+  // Après `program.contract` : `TemplatePayload` porte des `SessionPayload`,
+  // et le fichier publié se lit de haut en bas.
+  ['template.contract', ['TemplateRowPayload', 'TemplatePayload']],
   [
     'admin.contract',
     ['AdminStatsPayload', 'AdminCoachPayload', 'CreatedCoachPayload'],

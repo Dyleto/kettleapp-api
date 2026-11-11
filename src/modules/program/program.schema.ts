@@ -45,7 +45,12 @@ const sessionBlockSchema = z.object({
   exercises: z.array(blockExerciseSchema).max(30),
 });
 
-const sessionInputSchema = z.object({
+/**
+ * Exporté pour les modèles de programme : c'est le même atelier qui les
+ * envoie, donc la même entrée. Un second schéma aurait divergé au premier
+ * champ ajouté à un bloc.
+ */
+export const sessionInputSchema = z.object({
   _id: z.string().optional(),
   order: z.number().int().min(1),
   // Le nom libre de la séance. Court par nature — « Full body A », pas une

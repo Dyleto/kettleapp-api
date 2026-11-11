@@ -26,3 +26,4 @@ export * from './program.contract';
 export * from './completed.contract';
 export * from './coach.contract';
 export * from './admin.contract';
+export * from './template.contract';
