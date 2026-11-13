@@ -103,7 +103,10 @@ export const googleAuthCallback = catchAsync(
       logger.warn(`[${rid}] googleAuthCallback: user not found after login`, {
         email: payload.email,
       });
-      throw new AppError('Utilisateur inconnu. Contactez votre coach.', 401);
+      throw new AppError(
+        "Aucun compte à cette adresse. Demande un lien d'invitation à ton coach.",
+        401
+      );
     }
 
     if (payload.picture && payload.picture !== user.picture) {
@@ -124,7 +127,7 @@ export const googleAuthCallback = catchAsync(
         });
       }
 
-      throw new AppError('Erreur de session, veuillez réessayer', 500);
+      throw new AppError("La session ne s'est pas ouverte. Réessaie.", 500);
     }
 
     const builtUser = await buildUser(user);
@@ -179,7 +182,10 @@ export const googleOneTapCallback = catchAsync(
       logger.warn(`[${rid}] googleOneTapCallback: user not found`, {
         email: payload.email,
       });
-      throw new AppError('Utilisateur inconnu. Contactez votre coach.', 401);
+      throw new AppError(
+        "Aucun compte à cette adresse. Demande un lien d'invitation à ton coach.",
+        401
+      );
     }
 
     if (payload.picture && payload.picture !== user.picture) {
@@ -200,7 +206,7 @@ export const googleOneTapCallback = catchAsync(
         });
       }
 
-      throw new AppError('Erreur de session, veuillez réessayer', 500);
+      throw new AppError("La session ne s'est pas ouverte. Réessaie.", 500);
     }
 
     const builtUser = await buildUser(user);

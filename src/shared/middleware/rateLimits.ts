@@ -62,7 +62,7 @@ export const makeLimiter = (opts: {
 export const globalLimiter = makeLimiter({
   windowMs: 15 * 60 * 1000,
   limit: 600,
-  message: 'Trop de requêtes, veuillez réessayer dans quelques minutes.',
+  message: 'Trop de requêtes. Réessaie dans quelques minutes.',
 });
 
 /**
@@ -87,5 +87,5 @@ export const authLimiter = makeLimiter({
 export const invitationLimiter = makeLimiter({
   windowMs: 60 * 60 * 1000,
   limit: 30,
-  message: "Trop de liens d'invitation générés, réessayez plus tard.",
+  message: "Trop de liens d'invitation créés. Réessaie plus tard.",
 });

@@ -195,9 +195,55 @@ for (const file of files) {
   }
 }
 
-if (hits.length === 0 && names.length === 0) {
+// ─── La voix ────────────────────────────────────────────────────────────────
+
+/**
+ * Kettle tutoie tout le monde, et un message d'erreur de l'API finit sous
+ * les yeux d'un coach ou d'un client comme n'importe quel autre texte.
+ *
+ * Sept messages vouvoyaient encore quand le front a tranché — « Contactez
+ * votre coach », « veuillez réessayer » — et personne ne les aurait relus :
+ * ils ne s'affichent que lorsque quelque chose échoue.
+ *
+ * Les pronoms seuls ne suffisent pas : « Réessayez plus tard » n'en porte
+ * aucun. D'où la seconde moitié du motif, qui prend tout mot en « -ez ».
+ * Hors commentaires, le code est en anglais : un tel mot ne peut venir que
+ * d'un message.
+ */
+const FORMAL = /\b(vous|votre|vos|veuillez)\b|\b[a-zà-ÿ]{3,}ez\b/i;
+
+/** Les mots en « -ez » qui ne sont pas des verbes. */
+const NOT_A_VERB = /\b(chez|assez|nez)\b/gi;
+
+/**
+ * Ce que la règle regarde : ce qui peut remonter à quelqu'un. Les scripts de
+ * `src/scripts` parlent à la personne qui les lance depuis un terminal, pas
+ * à un utilisateur de Kettle.
+ */
+const VOICE_SCOPE = (rel) =>
+  rel.startsWith('src/') && !rel.startsWith('src/scripts/');
+
+const formal = [];
+for (const file of files) {
+  const rel = relative(ROOT, file);
+  if (!VOICE_SCOPE(rel)) continue;
+  // Les commentaires citent volontiers l'ancien texte pour dire pourquoi il
+  // a changé : on ne juge que ce qui reste une fois qu'ils sont retirés. Les
+  // retours à la ligne sont gardés, pour que le numéro de ligne reste juste.
+  const shown = readFileSync(file, 'utf8').replace(
+    /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,
+    (comment) => comment.replace(/[^\n]/g, ' ')
+  );
+  shown.split('\n').forEach((text, index) => {
+    if (FORMAL.test(text.replace(NOT_A_VERB, ' '))) {
+      formal.push({ file: rel, line: index + 1, excerpt: text.trim() });
+    }
+  });
+}
+
+if (hits.length === 0 && names.length === 0 && formal.length === 0) {
   console.log(
-    `${files.length} fichiers : commentaires en français, identifiants en anglais.`
+    `${files.length} fichiers : commentaires en français, identifiants en anglais, messages au tutoiement.`
   );
   process.exit(0);
 }
@@ -214,6 +260,14 @@ for (const { file, name } of names) console.error(`${file}  ${name}`);
 if (names.length > 0) {
   console.error(
     `\n${names.length} identifiant(s) français. La règle du projet les veut en anglais.`
+  );
+}
+for (const { file, line, excerpt } of formal) {
+  console.error(`${file}:${line}  ${excerpt.slice(0, 80)}`);
+}
+if (formal.length > 0) {
+  console.error(
+    `\n${formal.length} message(s) au vouvoiement. Kettle tutoie tout le monde.`
   );
 }
 process.exit(1);

@@ -26,6 +26,13 @@ quatre mots de prose sans aucune marque de français, parce que c'est le
 français qu'on exige. Pour les identifiants, c'est une liste de mots français,
 plus une règle sans exception — un identifiant ne porte jamais d'accent.
 
+Il vérifie aussi la voix : **Kettle tutoie tout le monde**, coach compris, et
+un message d'erreur de l'API s'affiche comme n'importe quel autre texte. Le
+script refuse « vous », « votre », « vos », « veuillez » et tout verbe en
+« -ez » hors commentaires — sept messages vouvoyaient encore quand le front a
+tranché, tous sur des chemins d'échec que personne ne relit. `src/scripts` en
+est exempté : ces scripts parlent à la personne qui les lance.
+
 Il est arrivé ici après le front, qui avait annoncé la règle tenue quatre fois
 sans l'être. Ce dépôt ne s'en tirait pas mieux : soixante identifiants
 français, dont une constante de contrôleur.

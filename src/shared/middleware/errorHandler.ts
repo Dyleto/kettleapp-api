@@ -15,7 +15,7 @@ const normalize = (
   if (err.name === 'JsonWebTokenError')
     return {
       statusCode: 401,
-      message: 'Token invalide, veuillez vous reconnecter',
+      message: 'Session invalide. Reconnecte-toi.',
     };
   return { statusCode, message };
 };
