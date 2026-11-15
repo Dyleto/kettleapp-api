@@ -21,7 +21,7 @@ import {
   filterComment,
   CARRIES_HEALTH_DATA,
 } from './healthConsent.service';
-import { applyPerformed, applyRoundsDone } from './completedSession.service';
+import { applySessionResults } from './completedSession.service';
 import { isValidObjectId } from 'mongoose';
 import { respond } from '../../shared/utils/respond';
 import {
@@ -64,6 +64,7 @@ export const completeSession = catchAsync(
       metrics,
       performed,
       roundsDone,
+      ladderDone,
       clientNotes,
       completedAt,
     } = req.body as CompleteSessionBody;
@@ -101,12 +102,11 @@ export const completeSession = catchAsync(
     // La prescription est recalculée ici, côté serveur, à partir de la séance
     // du coach. Le client n'y touche pas : il n'ajoute que ce qu'il a fait.
     const formatted = formatSession(session as unknown as PopulatedSession);
-    // Deux passes, deux portées : le réalisé des séries appartient aux
-    // exercices, le nombre de tours bouclés appartient au bloc.
-    const blocks = applyRoundsDone(
-      applyPerformed(formatted.blocks, performed),
-      roundsDone
-    );
+    const blocks = applySessionResults(formatted.blocks, {
+      performed,
+      roundsDone,
+      ladderDone,
+    });
 
     const completed = await CompletedSession.create({
       clientId: client._id,
@@ -153,8 +153,14 @@ export const updateCompletedSession = catchAsync(
   async (req: Request, res: Response) => {
     const client = clientOf(res);
     const { id } = req.params;
-    const { feedback, performed, roundsDone, clientNotes, completedAt } =
-      req.body as UpdateCompletedSessionBody;
+    const {
+      feedback,
+      performed,
+      roundsDone,
+      ladderDone,
+      clientNotes,
+      completedAt,
+    } = req.body as UpdateCompletedSessionBody;
     const rid = req.requestId ?? '?';
 
     if (!isValidObjectId(id)) throw new AppError('Bilan introuvable', 404);
@@ -179,13 +185,18 @@ export const updateCompletedSession = catchAsync(
     if (completedAt !== undefined)
       completed.completedAt = new Date(completedAt);
 
-    if (performed !== undefined || roundsDone !== undefined) {
+    if (
+      performed !== undefined ||
+      roundsDone !== undefined ||
+      ladderDone !== undefined
+    ) {
       // On repart du snapshot stocké et on ne réécrit que le réalisé :
       // la prescription enregistrée le jour de la séance reste intacte.
-      const blocks = applyRoundsDone(
-        applyPerformed(completed.toObject().blocks, performed),
-        roundsDone
-      );
+      const blocks = applySessionResults(completed.toObject().blocks, {
+        performed,
+        roundsDone,
+        ladderDone,
+      });
       completed.set('blocks', blocks);
     }
 

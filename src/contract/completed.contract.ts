@@ -57,6 +57,10 @@ export const blockSnapshotPayload = z.object({
   rounds: z.number().optional(),
   /** Les tours réellement bouclés — le score, quand le format en a un. */
   performedRounds: z.number().optional(),
+  /** Les paliers entièrement faits d'une échelle bornée. */
+  performedRungs: z.number().optional(),
+  /** Le temps au chrono de cette échelle, en secondes. */
+  performedSeconds: z.number().optional(),
   restBetweenRounds: z.number().optional(),
   workDuration: z.number().optional(),
   restDuration: z.number().optional(),

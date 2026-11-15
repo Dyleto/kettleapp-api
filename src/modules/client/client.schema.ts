@@ -48,6 +48,26 @@ const roundsDoneSchema = z
   )
   .max(50);
 
+// Ce qu'une échelle bornée par une limite de temps a donné : les paliers
+// entièrement faits et le temps au chrono. Des paliers faits plutôt que « le
+// palier atteint » : « 7 sur 7 » dit alors sans ambiguïté que l'échelle est
+// bouclée, là où « palier 7 en 12:00 » ne dirait pas si le septième a été
+// fini ou interrompu par la limite. Bornés comme le reste : trente paliers au
+// plus dans un bloc, trois heures au plus dans une limite.
+const ladderDoneSchema = z
+  .array(
+    z.object({
+      blockOrder: z.number().int().min(0),
+      rungs: z.number().int().min(0).max(30),
+      seconds: z
+        .number()
+        .int()
+        .min(0)
+        .max(180 * 60),
+    })
+  )
+  .max(20);
+
 const pastDate = z.coerce.date().refine((date) => date <= new Date(), {
   message: 'La date de complétion ne peut pas être dans le futur',
 });
@@ -75,6 +95,7 @@ export const completeSessionSchema = z.object({
       metrics: metricsSchema.optional(),
       performed: performedSchema.optional(),
       roundsDone: roundsDoneSchema.optional(),
+      ladderDone: ladderDoneSchema.optional(),
       clientNotes: z.string().max(5000).optional(),
       completedAt: pastDate.optional(),
     })
@@ -104,6 +125,7 @@ export const updateCompletedSessionSchema = z.object({
       feedback: feedbackSchema.optional(),
       performed: performedSchema.optional(),
       roundsDone: roundsDoneSchema.optional(),
+      ladderDone: ladderDoneSchema.optional(),
       clientNotes: z.string().max(5000).optional(),
       completedAt: pastDate.optional(),
     })

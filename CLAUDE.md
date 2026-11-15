@@ -114,8 +114,10 @@ Un script de sabotage doit vérifier qu'il a bien saboté quelque chose.
 ## Les vérifications
 
 `npm test` (Vitest) éprouve la logique pure et la structure : ce qui arrête le
-démarrage, la couverture des routes par les schémas, et ce que décide
-`applyRoundsDone`. 40 tests, sans base de données.
+démarrage, la couverture des routes par les schémas, ce que la fin d'une
+séance laisse passer, et ce que décide `applySessionResults` — le réalisé des
+séries, les tours bouclés, le résultat d'une échelle. 75 tests, sans base de
+données.
 
 Il remplace trois scripts `verify:*`, et il a trouvé deux défauts dans l'heure
 qui a suivi son installation — ce qui dit assez ce que son absence coûtait.

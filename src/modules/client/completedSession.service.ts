@@ -14,6 +14,14 @@ export type RoundsInput = {
   rounds: number;
 };
 
+// Ce que le client envoie pour une échelle bornée : les paliers entièrement
+// faits et le temps au chrono, en secondes.
+export type LadderInput = {
+  blockOrder: number;
+  rungs: number;
+  seconds: number;
+};
+
 type ExerciseLike = { order: number; performed?: IPerformed };
 type BlockLike = { order: number; exercises: ExerciseLike[] };
 
@@ -100,3 +108,61 @@ export const applyRoundsDone = <B extends { order: number }>(
     return rounds === undefined ? block : { ...block, performedRounds: rounds };
   });
 };
+
+/**
+ * Recopie ce qu'une échelle bornée a donné — les paliers faits et le temps
+ * au chrono — dans le snapshot.
+ *
+ * Le pendant d'`applyRoundsDone` pour l'échelle, et pour les mêmes raisons :
+ * il ne touche que `performedRungs` et `performedSeconds`, la prescription
+ * — les paliers, la limite — reste celle du coach, et c'est leur
+ * comparaison qui l'intéresse : « palier 5 sur 7 en 12:00 ». Zéro palier
+ * est une réponse : le client était là, la limite est tombée au premier.
+ */
+export const applyLadderDone = <B extends { order: number }>(
+  blocks: B[],
+  entries?: LadderInput[]
+): (B & { performedRungs?: number; performedSeconds?: number })[] => {
+  if (!entries || entries.length === 0) return blocks;
+
+  const byBlock = new Map<number, LadderInput>();
+  entries.forEach((e) => byBlock.set(e.blockOrder, e));
+
+  return blocks.map((block) => {
+    const entry = byBlock.get(block.order);
+    return entry === undefined
+      ? block
+      : {
+          ...block,
+          performedRungs: entry.rungs,
+          performedSeconds: entry.seconds,
+        };
+  });
+};
+
+/** Tout ce que le client rend à la fin d'une séance, ou en corrigeant un
+ * bilan. */
+export type SessionResults = {
+  performed?: PerformedInput[];
+  roundsDone?: RoundsInput[];
+  ladderDone?: LadderInput[];
+};
+
+/**
+ * Pose sur un snapshot tout ce que le client a fait : le réalisé des séries
+ * sur les exercices, les tours bouclés et le résultat d'une échelle sur les
+ * blocs.
+ *
+ * L'enchaînement vivait dans le contrôleur, deux fois — fin de séance et
+ * correction — où aucun test ne le voyait : un champ ajouté au schéma mais
+ * oublié dans l'une des deux chaînes passait la validation puis
+ * disparaissait. Il est écrit une fois, ici, et vérifié.
+ */
+export const applySessionResults = <B extends BlockLike>(
+  blocks: B[],
+  { performed, roundsDone, ladderDone }: SessionResults
+) =>
+  applyLadderDone(
+    applyRoundsDone(applyPerformed(blocks, performed), roundsDone),
+    ladderDone
+  );

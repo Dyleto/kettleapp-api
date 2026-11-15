@@ -83,6 +83,13 @@ export interface IBlockSnapshot {
    * l'intérêt.
    */
   performedRounds?: number;
+  /**
+   * Les paliers entièrement faits d'une échelle bornée, et le temps au chrono
+   * en secondes. Écrits par le client à la fin de la séance, à côté de
+   * `repsScheme` et de `durationMinutes` qu'ils ne remplacent pas.
+   */
+  performedRungs?: number;
+  performedSeconds?: number;
   restBetweenRounds?: number;
   workDuration?: number;
   restDuration?: number;
@@ -188,6 +195,8 @@ const blockSnapshotSchema = new Schema(
     intervalMinutes: { type: Number },
     rounds: { type: Number },
     performedRounds: { type: Number },
+    performedRungs: { type: Number },
+    performedSeconds: { type: Number },
     restBetweenRounds: { type: Number },
     workDuration: { type: Number },
     restDuration: { type: Number },

@@ -8,7 +8,11 @@
  * Fonction pure, aucune base de données.
  */
 import { describe, expect, it } from 'vitest';
-import { applyRoundsDone } from './completedSession.service';
+import {
+  applyLadderDone,
+  applyRoundsDone,
+  applySessionResults,
+} from './completedSession.service';
 
 /** Trois blocs, dont un seul prescrit des tours. */
 const blocks = () => [
@@ -76,5 +80,92 @@ describe('l’entrée n’est pas modifiée au passage', () => {
     expect(
       (before[1] as { performedRounds?: number }).performedRounds
     ).toBeUndefined();
+  });
+});
+
+/**
+ * Ce que `applyLadderDone` pose sur un instantané : les paliers faits d'une
+ * échelle bornée et le temps au chrono, à côté de la prescription.
+ */
+describe('une échelle bornée', () => {
+  const ladderBlocks = () => [
+    { order: 1, type: 'warmup', repsScheme: undefined as number[] | undefined },
+    {
+      order: 2,
+      type: 'ladder',
+      repsScheme: [2, 4, 6, 8, 6, 4, 2] as number[] | undefined,
+      durationMinutes: 12 as number | undefined,
+    },
+  ];
+
+  it('rend les blocs tels quels quand rien n’est envoyé', () => {
+    const before = ladderBlocks();
+    expect(applyLadderDone(before, undefined)).toBe(before);
+    expect(applyLadderDone(before, [])).toBe(before);
+  });
+
+  it('pose les paliers et le temps sur le bloc visé, et sur lui seul', () => {
+    const after = applyLadderDone(ladderBlocks(), [
+      { blockOrder: 2, rungs: 4, seconds: 720 },
+    ]);
+    const ladder = after.find((b) => b.order === 2);
+    expect([ladder?.performedRungs, ladder?.performedSeconds]).toEqual([
+      4, 720,
+    ]);
+    expect(after.find((b) => b.order === 1)?.performedRungs).toBeUndefined();
+  });
+
+  it('sans toucher aux paliers prescrits ni à la limite', () => {
+    const after = applyLadderDone(ladderBlocks(), [
+      { blockOrder: 2, rungs: 7, seconds: 582 },
+    ]);
+    const ladder = after.find((b) => b.order === 2);
+    expect(ladder?.repsScheme).toEqual([2, 4, 6, 8, 6, 4, 2]);
+    expect(ladder?.durationMinutes).toBe(12);
+  });
+
+  it('enregistre zéro palier : la limite est tombée au premier', () => {
+    const after = applyLadderDone(ladderBlocks(), [
+      { blockOrder: 2, rungs: 0, seconds: 720 },
+    ]);
+    expect(after.find((b) => b.order === 2)?.performedRungs).toBe(0);
+  });
+});
+
+/**
+ * Les trois passes ensemble, telles que la fin de séance et la correction
+ * d'un bilan les appliquent.
+ */
+describe('tout ce que le client rend, en une fois', () => {
+  const session = () => [
+    {
+      order: 1,
+      type: 'amrap',
+      exercises: [{ order: 1 }],
+    },
+    {
+      order: 2,
+      type: 'ladder',
+      exercises: [{ order: 1 }],
+    },
+  ];
+
+  it('pose le réalisé, les tours et l’échelle, chacun à sa place', () => {
+    const after = applySessionResults(session(), {
+      performed: [{ blockOrder: 1, exerciseOrder: 1, sets: [{ reps: 10 }] }],
+      roundsDone: [{ blockOrder: 1, rounds: 6 }],
+      ladderDone: [{ blockOrder: 2, rungs: 5, seconds: 720 }],
+    });
+    expect(after[0].exercises[0].performed?.sets).toEqual([{ reps: 10 }]);
+    expect(after[0]).toMatchObject({ performedRounds: 6 });
+    expect(after[1]).toMatchObject({
+      performedRungs: 5,
+      performedSeconds: 720,
+    });
+  });
+
+  it('ne touche à rien quand le client ne rend rien', () => {
+    const after = applySessionResults(session(), {});
+    expect(after).toEqual(session());
   });
 });
