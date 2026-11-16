@@ -116,7 +116,7 @@ Un script de sabotage doit vérifier qu'il a bien saboté quelque chose.
 `npm test` (Vitest) éprouve la logique pure et la structure : ce qui arrête le
 démarrage, la couverture des routes par les schémas, ce que la fin d'une
 séance laisse passer, et ce que décide `applySessionResults` — le réalisé des
-séries, les tours bouclés, le résultat d'une échelle. 75 tests, sans base de
+séries, les tours bouclés, le résultat d'une échelle. 81 tests, sans base de
 données.
 
 Il remplace trois scripts `verify:*`, et il a trouvé deux défauts dans l'heure
@@ -130,7 +130,7 @@ Vitest pose `NODE_ENV=test`.
 
 `npm run verify` garde les cinq suites qui montent une application Express :
 le gestionnaire d'erreurs, les gardes, la validation, les plafonds et le
-contrat de sortie. 85 assertions, et elles attendent leur tour de conversion —
+contrat de sortie. 87 assertions, et elles attendent leur tour de conversion —
 chacune porte encore sa propre copie d'un `ok(label, condition)`.
 
 `verify:contract` éprouve de vrais documents Mongoose et non des objets

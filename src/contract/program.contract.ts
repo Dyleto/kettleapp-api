@@ -83,8 +83,26 @@ export const programPayload = z.object({
   sessions: z.array(sessionPayload),
 });
 
-/** Ce que rend `GET /api/client/program`. */
-export const clientProgramPayload = z.object({ program: programPayload });
+/**
+ * Un coach du client, tel que ses écrans le nomment : son prénom, et rien
+ * d'autre.
+ *
+ * Le nom, la photo et la date du lien sortent déjà par le compte, là où ils
+ * s'affichent. Ici il ne s'agit que d'écrire « Envoyer à Julie » — un champ
+ * de plus serait un champ que personne ne lit.
+ */
+export const clientCoachPayload = z.object({ firstName: z.string() });
+
+/**
+ * Ce que rend `GET /api/client/program`.
+ *
+ * `coaches` voyage avec le programme parce que tous les écrans du client le
+ * chargent déjà : le prénom arrive sans une requête de plus.
+ */
+export const clientProgramPayload = z.object({
+  program: programPayload,
+  coaches: z.array(clientCoachPayload),
+});
 
 export type BlockExercisePayload = z.infer<typeof blockExercisePayload>;
 export type SessionBlockPayload = z.infer<typeof sessionBlockPayload>;

@@ -22,6 +22,7 @@ import {
   CARRIES_HEALTH_DATA,
 } from './healthConsent.service';
 import { applySessionResults } from './completedSession.service';
+import { coachesOf } from './coaches.service';
 import { isValidObjectId } from 'mongoose';
 import { respond } from '../../shared/utils/respond';
 import {
@@ -38,16 +39,20 @@ export const getProgram = catchAsync(async (req: Request, res: Response) => {
 
   const program = await getOrCreate(client._id);
 
-  const sessions = await Session.find({ programId: program._id })
-    .sort({ order: 1 })
-    .populate('blocks.exercises.exerciseId')
-    .lean();
+  const [sessions, coaches] = await Promise.all([
+    Session.find({ programId: program._id })
+      .sort({ order: 1 })
+      .populate('blocks.exercises.exerciseId')
+      .lean(),
+    coachesOf(client),
+  ]);
 
   respond(res, 200, clientProgramPayload, {
     program: {
       ...program.toObject(),
       sessions: (sessions as unknown as PopulatedSession[]).map(formatSession),
     },
+    coaches,
   });
 });
 

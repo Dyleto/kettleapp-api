@@ -29,6 +29,7 @@ import {
   completedSessionPayload,
   sessionPayload,
   programPayload,
+  clientProgramPayload,
   exercisePayload,
   clientRowPayload,
   userPayload,
@@ -327,6 +328,36 @@ console.log('\n── la séance et le programme perdent leurs clés internes');
     '`clientId` ne sort pas du programme',
     !!program && !('clientId' in program),
     keys(program).join(' ')
+  );
+
+  // Le coach du client : son prénom sort, et lui seul. Le service ne charge
+  // que lui, mais c'est le contrat qui répond de ce qui quitte l'API — un
+  // `populate` élargi un jour ne doit pas faire sortir une adresse.
+  const withCoach = parses(
+    'le programme du client passe le contrat, avec ses coachs',
+    clientProgramPayload,
+    {
+      program: {
+        _id: oid(),
+        clientId: oid(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        sessions: [],
+      },
+      coaches: [
+        {
+          firstName: 'Julie',
+          lastName: 'Martin',
+          email: 'julie@exemple.fr',
+          picture: 'https://exemple.fr/julie.jpg',
+        },
+      ],
+    }
+  );
+  ok(
+    'du coach, seul le prénom sort',
+    !!withCoach && keys(withCoach.coaches[0]).join(' ') === 'firstName',
+    withCoach ? keys(withCoach.coaches[0]).join(' ') : '(refusé)'
   );
 }
 
