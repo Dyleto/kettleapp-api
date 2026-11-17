@@ -7,6 +7,8 @@ import {
   updateCompletedSessionSchema,
 } from './client.schema';
 import * as clientController from './client.controller';
+import * as reply from '../reply/reply.controller';
+import { idParamSchema } from '../../shared/schemas/params.schema';
 
 const router = Router();
 
@@ -30,6 +32,13 @@ router.patch(
 
 // HISTORIQUE
 router.get('/history', clientController.getHistory);
+// Lire la réponse de son coach éteint la pastille « Nouveau », et dit au
+// coach « lue par Sarah ».
+router.patch(
+  '/sessions/completed/:id/replies/read',
+  validate(idParamSchema),
+  reply.readCoachReplies
+);
 
 // DONNÉES DE SANTÉ
 router.put(

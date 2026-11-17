@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { id, isoDate, customMetric, vacant } from './primitives';
 import { FEEDBACK_TAGS } from '../shared/constants/feedback';
+import { REACTIONS } from '../shared/constants/reply';
 
 /**
  * Ce que le client a fait sur UNE série.
@@ -105,6 +106,24 @@ export const legacyMetricsPayload = z.object({
  * `originalSessionId` reste : c'est lui qui relie un bilan à la séance du
  * programme dont il vient.
  */
+/** Une réaction, par sa clé : l'émoji est un choix du front. */
+export const reactionPayload = z.enum(REACTIONS);
+
+/**
+ * Une réponse du coach, telle que le client et le coach la lisent.
+ *
+ * `coachId` sort pour que le coach reconnaisse les siennes parmi celles d'un
+ * client suivi à deux ; le client, lui, lit `firstName`.
+ */
+export const coachReplyPayload = z.object({
+  coachId: id,
+  firstName: z.string(),
+  reaction: reactionPayload.optional(),
+  text: z.string().optional(),
+  sentAt: isoDate,
+  readAt: isoDate.optional(),
+});
+
 export const completedSessionPayload = z.object({
   _id: id,
   originalSessionId: id,
@@ -118,6 +137,11 @@ export const completedSessionPayload = z.object({
   metrics: vacant(legacyMetricsPayload),
   clientNotes: z.string().optional(),
   viewedByCoach: z.boolean(),
+  /**
+   * Toujours une liste, vide pour tout bilan d'avant les réponses : une
+   * lecture `lean()` n'a pas le défaut que Mongoose pose à l'hydratation.
+   */
+  replies: z.array(coachReplyPayload).default([]),
   completedAt: isoDate,
   editedAt: isoDate.optional(),
 });
@@ -139,6 +163,8 @@ export type BlockExerciseSnapshotPayload = z.infer<
 >;
 export type BlockSnapshotPayload = z.infer<typeof blockSnapshotPayload>;
 export type FeedbackPayload = z.infer<typeof feedbackPayload>;
+export type ReactionPayload = z.infer<typeof reactionPayload>;
+export type CoachReplyPayload = z.infer<typeof coachReplyPayload>;
 export type LegacyMetricsPayload = z.infer<typeof legacyMetricsPayload>;
 export type CompletedSessionPayload = z.infer<typeof completedSessionPayload>;
 export type CompletedWrapperPayload = z.infer<typeof completedWrapperPayload>;

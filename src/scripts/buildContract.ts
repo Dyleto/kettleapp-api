@@ -70,6 +70,8 @@ const PUBLISHED = [
       'BlockExerciseSnapshotPayload',
       'BlockSnapshotPayload',
       'FeedbackPayload',
+      'ReactionPayload',
+      'CoachReplyPayload',
       'LegacyMetricsPayload',
       'CompletedSessionPayload',
       'CompletedWrapperPayload',

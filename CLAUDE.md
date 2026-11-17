@@ -119,7 +119,7 @@ d'une séance laisse passer, ce que décide `applySessionResults` — le réalis
 des séries, les tours bouclés, le résultat d'une échelle ou d'un chipper — et,
 sur des applications Express nues montées avec supertest, le gestionnaire
 d'erreurs, les gardes, la validation, les plafonds et le contrat de sortie.
-141 tests.
+173 tests.
 
 Il remplace huit scripts `verify:*`, qui portaient chacun sa copie d'un
 `ok(label, condition)`. Les trois premiers convertis lui ont valu deux défauts
@@ -141,6 +141,14 @@ service fait tourner la requête, une fonction pure met en forme ce qui en
 revient. `roster.service` en est l'exemple — lire le lien de rattachement de
 CE coach, rendre absent un ressenti que `$first` rend `null` (et que le
 contrat refusait, ce qui faisait répondre 500 à toute la liste).
+
+Ce qui entoure une règle — qui a le droit, ce qui est marqué, ce qui est
+enregistré — se teste aussi sans base : les lectures sont remplacées par ce
+qu'elles rendraient, `save` par un espion (`reply.service.test.ts`). Le
+piège est connu : une lecture remplacée ne regarde pas ce qu'on lui demande.
+Retirer le coach du filtre qui cherche le lien entre lui et le client
+laissait tout vert, jusqu'à ce qu'une assertion porte sur la requête
+elle-même. Un filtre qui autorise s'éprouve par ce qu'il demande.
 
 `verify:copy` exige `mongodb-memory-server`, qui télécharge un binaire
 MongoDB : il n'est pas branché à la CI, et il ne peut pas l'être. À lancer

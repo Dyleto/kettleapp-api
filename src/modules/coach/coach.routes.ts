@@ -21,6 +21,8 @@ import {
   updateProgramSessionsSchema,
 } from '../program/program.schema';
 import * as template from '../template/template.controller';
+import * as reply from '../reply/reply.controller';
+import { writeReplySchema } from '../reply/reply.schema';
 import {
   createTemplateSchema,
   importTemplateSchema,
@@ -58,6 +60,15 @@ router.patch(
   '/clients/:id/history/mark-viewed',
   validate(idParamSchema),
   roster.markHistoryAsViewed
+);
+
+// ── Répondre à une séance faite ───────────────────────────────────────────
+// Par la séance et non par le client : le fil « À lire » mêle les clients,
+// et une réponse s'y écrit sans ouvrir la fiche de personne.
+router.patch(
+  '/sessions/completed/:id/reply',
+  validate(writeReplySchema),
+  reply.writeCoachReply
 );
 
 // ── Programmes et séances ─────────────────────────────────────────────────

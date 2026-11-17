@@ -193,6 +193,45 @@ describe('le bilan ne sort plus avec les clés qu’il ne déclare pas', () => {
     expect(filled.metrics?.stress).toBe(2);
     expect(filled.blocks[0].exercises[0].customMetric?.unit).toBe('m');
   });
+
+  // Un bilan d'avant les réponses du coach : le document n'en porte aucune.
+  it('sans réponse enregistrée, la liste sort vide', () => {
+    expect(parsed(completedSessionPayload, document).replies).toEqual([]);
+  });
+
+  // Une réponse sans réaction ni lecture : sur un sous-document hydraté, ce
+  // qui manque doit rester absent, et le contrat ne pas le refuser.
+  it('une réponse hydratée garde ses absences', () => {
+    const answered = parsed(
+      completedSessionPayload,
+      CompletedSession.hydrate({
+        _id: oid(),
+        clientId: oid(),
+        programId: oid(),
+        originalSessionId: oid(),
+        sessionOrder: 1,
+        blocks: [],
+        viewedByCoach: true,
+        completedAt: new Date(),
+        replies: [
+          {
+            coachId: oid(),
+            firstName: 'Julie',
+            text: 'Bien joué.',
+            sentAt: new Date('2026-11-17T08:00:00.000Z'),
+          },
+        ],
+      })
+    );
+    expect(answered.replies).toHaveLength(1);
+    expect(answered.replies[0]).toMatchObject({
+      firstName: 'Julie',
+      text: 'Bien joué.',
+      sentAt: '2026-11-17T08:00:00.000Z',
+    });
+    expect(answered.replies[0].reaction).toBeUndefined();
+    expect(answered.replies[0].readAt).toBeUndefined();
+  });
 });
 
 describe('la séance et le programme perdent leurs clés internes', () => {

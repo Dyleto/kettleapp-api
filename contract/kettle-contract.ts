@@ -9,7 +9,7 @@
  * reporter le fichier ici. Le modifier ici ne changerait rien à ce que l'API
  * envoie — cela ferait seulement mentir les types.
  *
- * Empreinte : fb445ed078aa
+ * Empreinte : 8f20fe3e7baf
  */
 
 export type CustomMetricPayload = { value: number; unit: string };
@@ -423,6 +423,17 @@ export type FeedbackPayload = {
   note?: string | undefined;
 };
 
+export type ReactionPayload = 'clap' | 'strong' | 'fire';
+
+export type CoachReplyPayload = {
+  coachId: string;
+  firstName: string;
+  sentAt: string;
+  reaction?: 'clap' | 'strong' | 'fire' | undefined;
+  text?: string | undefined;
+  readAt?: string | undefined;
+};
+
 export type LegacyMetricsPayload = {
   stress: number;
   mood: number;
@@ -472,6 +483,14 @@ export type CompletedSessionPayload = {
     repsScheme?: number[] | undefined;
   }[];
   viewedByCoach: boolean;
+  replies: {
+    coachId: string;
+    firstName: string;
+    sentAt: string;
+    reaction?: 'clap' | 'strong' | 'fire' | undefined;
+    text?: string | undefined;
+    readAt?: string | undefined;
+  }[];
   completedAt: string;
   sessionName?: string | undefined;
   coachNotes?: string | undefined;
@@ -546,6 +565,14 @@ export type CompletedWrapperPayload = {
       repsScheme?: number[] | undefined;
     }[];
     viewedByCoach: boolean;
+    replies: {
+      coachId: string;
+      firstName: string;
+      sentAt: string;
+      reaction?: 'clap' | 'strong' | 'fire' | undefined;
+      text?: string | undefined;
+      readAt?: string | undefined;
+    }[];
     completedAt: string;
     sessionName?: string | undefined;
     coachNotes?: string | undefined;
@@ -621,6 +648,14 @@ export type ClientHistoryPayload = {
       repsScheme?: number[] | undefined;
     }[];
     viewedByCoach: boolean;
+    replies: {
+      coachId: string;
+      firstName: string;
+      sentAt: string;
+      reaction?: 'clap' | 'strong' | 'fire' | undefined;
+      text?: string | undefined;
+      readAt?: string | undefined;
+    }[];
     completedAt: string;
     sessionName?: string | undefined;
     coachNotes?: string | undefined;

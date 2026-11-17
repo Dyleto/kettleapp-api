@@ -1,5 +1,6 @@
 import { model, Schema, Types, Document } from 'mongoose';
 import { FEEDBACK_TAGS, FeedbackTag } from '../shared/constants/feedback';
+import { REACTIONS, REPLY_TEXT_MAX, Reaction } from '../shared/constants/reply';
 
 // Ce que le client a réellement fait, à côté de la prescription.
 // Une clé absente = non renseignée. On n'écrit jamais 0 pour dire "rien".
@@ -117,6 +118,30 @@ export interface IFeedback {
 }
 
 /**
+ * Ce que le coach répond à une séance faite : une réaction, un texte, ou les
+ * deux.
+ *
+ * Une liste et non un champ. Une réponse se modifie tant que le client ne
+ * l'a pas lue ; une fois lue, elle ne bouge plus, et le coach en écrit une
+ * nouvelle (maquette, « Ressentis d'un client »). Réécrire une réponse déjà
+ * lue changerait sous les yeux du client ce qu'il a lu. Et un client peut
+ * suivre deux coachs : chacun répond pour lui.
+ *
+ * `firstName` est figé à l'envoi, comme une signature : le client lit
+ * « Julie » sans une requête de plus par réponse.
+ */
+export interface ICoachReply {
+  coachId: Types.ObjectId;
+  firstName: string;
+  reaction?: Reaction;
+  text?: string;
+  sentAt: Date;
+  /** Absent tant que le client ne l'a pas lue : c'est la pastille
+   * « Nouveau » chez lui, et « Julie ne l'a pas encore lue » chez le coach. */
+  readAt?: Date;
+}
+
+/**
  * Une séance terminée : la prescription de ce jour-là, et ce qui en a été
  * fait.
  *
@@ -152,6 +177,7 @@ export interface ICompletedSession extends Document {
   };
   clientNotes?: string;
   viewedByCoach: boolean;
+  replies: ICoachReply[];
   completedAt: Date;
   editedAt?: Date;
 }
@@ -221,6 +247,20 @@ const feedbackSchema = new Schema(
   { _id: false }
 );
 
+// `firstName` n'est pas `required` : Mongoose refuserait la chaîne vide, et
+// un coach sans prénom doit pouvoir répondre.
+const coachReplySchema = new Schema(
+  {
+    coachId: { type: Schema.Types.ObjectId, ref: 'Coach', required: true },
+    firstName: { type: String, default: '' },
+    reaction: { type: String, enum: REACTIONS },
+    text: { type: String, trim: true, maxlength: REPLY_TEXT_MAX },
+    sentAt: { type: Date, required: true },
+    readAt: { type: Date },
+  },
+  { _id: false }
+);
+
 const CompletedSessionSchema = new Schema(
   {
     clientId: { type: Schema.Types.ObjectId, ref: 'Client', required: true },
@@ -245,6 +285,7 @@ const CompletedSessionSchema = new Schema(
     },
     clientNotes: { type: String },
     viewedByCoach: { type: Boolean, default: false },
+    replies: { type: [coachReplySchema], default: [] },
     completedAt: { type: Date, default: Date.now },
     editedAt: { type: Date },
   },
