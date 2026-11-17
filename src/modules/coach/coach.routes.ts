@@ -23,6 +23,12 @@ import {
 import * as template from '../template/template.controller';
 import * as reply from '../reply/reply.controller';
 import * as inbox from '../inbox/inbox.controller';
+import * as tag from '../tag/tag.controller';
+import {
+  createTagSchema,
+  renameTagSchema,
+  setClientTagsSchema,
+} from '../tag/tag.schema';
 import { inboxQuerySchema, markViewedSchema } from '../inbox/inbox.schema';
 import { writeReplySchema } from '../reply/reply.schema';
 import {
@@ -62,6 +68,17 @@ router.patch(
   '/clients/:id/history/mark-viewed',
   validate(idParamSchema),
   roster.markHistoryAsViewed
+);
+
+// ── Étiquettes ────────────────────────────────────────────────────────────
+router.get('/tags', tag.getTags);
+router.post('/tags', validate(createTagSchema), tag.postTag);
+router.patch('/tags/:id', validate(renameTagSchema), tag.patchTag);
+router.delete('/tags/:id', validate(idParamSchema), tag.removeTag);
+router.put(
+  '/clients/:clientId/tags',
+  validate(setClientTagsSchema),
+  tag.putClientTags
 );
 
 // ── À lire ────────────────────────────────────────────────────────────────

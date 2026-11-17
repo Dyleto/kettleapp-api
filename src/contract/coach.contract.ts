@@ -27,6 +27,21 @@ export const clientRowPayload = z.object({
   lastEffort: z.number().optional(),
   /** Depuis quand ce client est suivi par CE coach. */
   linkedAt: isoDate,
+  /** Les étiquettes que CE coach lui a posées — jamais celles d'un autre. */
+  tagIds: z.array(id).default([]),
+});
+
+/** Une étiquette du coach. La couleur n'en fait pas partie : l'écran la
+ * déduit du nom, pour que la même étiquette ait toujours la même. */
+export const tagPayload = z.object({
+  _id: id,
+  name: z.string(),
+});
+
+/** Ce qui a été posé sur le client, une fois écartées les étiquettes
+ * inconnues. */
+export const clientTagsPayload = z.object({
+  tagIds: z.array(id),
 });
 
 /**
@@ -142,6 +157,8 @@ export const accountSummaryPayload = z.object({
 });
 
 export type ClientRowPayload = z.infer<typeof clientRowPayload>;
+export type TagPayload = z.infer<typeof tagPayload>;
+export type ClientTagsPayload = z.infer<typeof clientTagsPayload>;
 export type InboxItemPayload = z.infer<typeof inboxItemPayload>;
 export type InboxPayload = z.infer<typeof inboxPayload>;
 export type ViewedPayload = z.infer<typeof viewedPayload>;

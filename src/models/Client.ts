@@ -10,6 +10,12 @@ import { IUser } from './User';
 export interface CoachLink {
   coachId: Types.ObjectId;
   linkedAt: Date;
+  /**
+   * Les étiquettes que CE coach a posées sur ce client. Sur le lien et non
+   * sur le client : un client suivi à deux est « Compétition » pour l'un et
+   * rien pour l'autre, et aucun des deux ne voit les étiquettes de l'autre.
+   */
+  tagIds?: Types.ObjectId[];
 }
 
 /**
@@ -53,6 +59,7 @@ const ClientSchema: Schema = new Schema(
       {
         coachId: { type: Schema.Types.ObjectId, ref: 'Coach', required: true },
         linkedAt: { type: Date, default: Date.now },
+        tagIds: [{ type: Schema.Types.ObjectId, ref: 'Tag' }],
       },
     ],
     healthConsent: {

@@ -82,6 +82,8 @@ const PUBLISHED = [
     'coach.contract',
     [
       'ClientRowPayload',
+      'TagPayload',
+      'ClientTagsPayload',
       'ClientDetailsPayload',
       'InboxItemPayload',
       'InboxPayload',

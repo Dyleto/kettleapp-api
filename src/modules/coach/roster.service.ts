@@ -23,7 +23,11 @@ export interface RawClientRow {
   firstName?: string;
   lastName?: string;
   picture?: string;
-  coaches: { coachId: Types.ObjectId | string; linkedAt: Date }[];
+  coaches: {
+    coachId: Types.ObjectId | string;
+    linkedAt: Date;
+    tagIds?: Types.ObjectId[];
+  }[];
   stats: {
     lastCompletedAt?: Date | null;
     lastEffort?: number | null;
@@ -120,6 +124,8 @@ export const clientRow = (raw: RawClientRow, coachId: Types.ObjectId) => {
     lastEffort:
       typeof stats?.lastEffort === 'number' ? stats.lastEffort : undefined,
     linkedAt: link?.linkedAt,
+    // Les siennes seulement : le lien est celui de CE coach.
+    tagIds: link?.tagIds ?? [],
   };
 };
 
