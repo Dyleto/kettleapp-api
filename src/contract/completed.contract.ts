@@ -59,7 +59,10 @@ export const blockSnapshotPayload = z.object({
   performedRounds: z.number().optional(),
   /** Les paliers entièrement faits d'une échelle bornée. */
   performedRungs: z.number().optional(),
-  /** Le temps au chrono de cette échelle, en secondes. */
+  /** Les mouvements entièrement faits d'un chipper ou d'un TimeCap borné. */
+  performedMovements: z.number().optional(),
+  /** Le temps au chrono d'un bloc borné — échelle, chipper, TimeCap — en
+   * secondes. */
   performedSeconds: z.number().optional(),
   restBetweenRounds: z.number().optional(),
   workDuration: z.number().optional(),

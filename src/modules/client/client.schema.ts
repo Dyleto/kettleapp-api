@@ -68,6 +68,26 @@ const ladderDoneSchema = z
   )
   .max(20);
 
+// Ce qu'un chipper ou un TimeCap borné a donné : les mouvements entièrement
+// faits et le temps au chrono. Le même raisonnement que pour l'échelle — des
+// mouvements faits, et non « le mouvement atteint » : « 4 sur 4 » dit que la
+// liste est écoulée, « mouvement 4 en 20:00 » ne dirait pas si le dernier a
+// été fini. Cinquante mouvements au plus, le plafond des exercices d'un bloc
+// à peu de chose près ; trois heures au plus dans une limite.
+const chipperDoneSchema = z
+  .array(
+    z.object({
+      blockOrder: z.number().int().min(0),
+      movements: z.number().int().min(0).max(50),
+      seconds: z
+        .number()
+        .int()
+        .min(0)
+        .max(180 * 60),
+    })
+  )
+  .max(20);
+
 const pastDate = z.coerce.date().refine((date) => date <= new Date(), {
   message: 'La date de complétion ne peut pas être dans le futur',
 });
@@ -96,6 +116,7 @@ export const completeSessionSchema = z.object({
       performed: performedSchema.optional(),
       roundsDone: roundsDoneSchema.optional(),
       ladderDone: ladderDoneSchema.optional(),
+      chipperDone: chipperDoneSchema.optional(),
       clientNotes: z.string().max(5000).optional(),
       completedAt: pastDate.optional(),
     })
@@ -126,6 +147,7 @@ export const updateCompletedSessionSchema = z.object({
       performed: performedSchema.optional(),
       roundsDone: roundsDoneSchema.optional(),
       ladderDone: ladderDoneSchema.optional(),
+      chipperDone: chipperDoneSchema.optional(),
       clientNotes: z.string().max(5000).optional(),
       completedAt: pastDate.optional(),
     })

@@ -140,12 +140,53 @@ export const applyLadderDone = <B extends { order: number }>(
   });
 };
 
+// Ce que le client envoie pour un chipper ou un TimeCap borné : les
+// mouvements entièrement faits et le temps au chrono, en secondes.
+export type ChipperInput = {
+  blockOrder: number;
+  movements: number;
+  seconds: number;
+};
+
+/**
+ * Recopie ce qu'un chipper ou un TimeCap borné a donné — les mouvements
+ * faits et le temps au chrono — dans le snapshot.
+ *
+ * Le pendant d'`applyLadderDone`, et le temps au chrono est le même champ :
+ * `performedSeconds` dit le temps d'un bloc borné, quel que soit son format.
+ * Les mouvements ont le leur, `performedMovements`, parce qu'un palier n'est
+ * pas un mouvement — « palier 5 sur 7 » et « mouvement 3 sur 4 » ne se
+ * comparent pas. Zéro est une réponse : la limite est tombée pendant le
+ * premier.
+ */
+export const applyChipperDone = <B extends { order: number }>(
+  blocks: B[],
+  entries?: ChipperInput[]
+): (B & { performedMovements?: number; performedSeconds?: number })[] => {
+  if (!entries || entries.length === 0) return blocks;
+
+  const byBlock = new Map<number, ChipperInput>();
+  entries.forEach((e) => byBlock.set(e.blockOrder, e));
+
+  return blocks.map((block) => {
+    const entry = byBlock.get(block.order);
+    return entry === undefined
+      ? block
+      : {
+          ...block,
+          performedMovements: entry.movements,
+          performedSeconds: entry.seconds,
+        };
+  });
+};
+
 /** Tout ce que le client rend à la fin d'une séance, ou en corrigeant un
  * bilan. */
 export type SessionResults = {
   performed?: PerformedInput[];
   roundsDone?: RoundsInput[];
   ladderDone?: LadderInput[];
+  chipperDone?: ChipperInput[];
 };
 
 /**
@@ -160,9 +201,12 @@ export type SessionResults = {
  */
 export const applySessionResults = <B extends BlockLike>(
   blocks: B[],
-  { performed, roundsDone, ladderDone }: SessionResults
+  { performed, roundsDone, ladderDone, chipperDone }: SessionResults
 ) =>
-  applyLadderDone(
-    applyRoundsDone(applyPerformed(blocks, performed), roundsDone),
-    ladderDone
+  applyChipperDone(
+    applyLadderDone(
+      applyRoundsDone(applyPerformed(blocks, performed), roundsDone),
+      ladderDone
+    ),
+    chipperDone
   );

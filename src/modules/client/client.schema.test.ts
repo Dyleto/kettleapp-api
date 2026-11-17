@@ -50,3 +50,33 @@ describe('le résultat d’une échelle', () => {
     );
   });
 });
+
+const chipperDone = [{ blockOrder: 3, movements: 2, seconds: 1200 }];
+
+describe('le résultat d’un chipper', () => {
+  it('passe la fin de séance et la correction, tel quel', () => {
+    const done = completeSessionSchema.parse({
+      params: { sessionId: 's1' },
+      body: { feedback, chipperDone },
+    });
+    expect(done.body.chipperDone).toEqual(chipperDone);
+    const fixed = updateCompletedSessionSchema.parse({
+      params: { id: 'c1' },
+      body: { chipperDone },
+    });
+    expect(fixed.body.chipperDone).toEqual(chipperDone);
+  });
+
+  it('refuse plus de cinquante mouvements, ou plus de trois heures', () => {
+    const body = (entry: object) => ({
+      params: { sessionId: 's1' },
+      body: { feedback, chipperDone: [{ ...chipperDone[0], ...entry }] },
+    });
+    expect(
+      completeSessionSchema.safeParse(body({ movements: 51 })).success
+    ).toBe(false);
+    expect(
+      completeSessionSchema.safeParse(body({ seconds: 180 * 60 + 1 })).success
+    ).toBe(false);
+  });
+});

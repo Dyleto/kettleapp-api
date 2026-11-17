@@ -9,7 +9,7 @@
  * reporter le fichier ici. Le modifier ici ne changerait rien à ce que l'API
  * envoie — cela ferait seulement mentir les types.
  *
- * Empreinte : 2aa27ee5fe64
+ * Empreinte : fb445ed078aa
  */
 
 export type CustomMetricPayload = { value: number; unit: string };
@@ -400,6 +400,7 @@ export type BlockSnapshotPayload = {
   rounds?: number | undefined;
   performedRounds?: number | undefined;
   performedRungs?: number | undefined;
+  performedMovements?: number | undefined;
   performedSeconds?: number | undefined;
   restBetweenRounds?: number | undefined;
   workDuration?: number | undefined;
@@ -463,6 +464,7 @@ export type CompletedSessionPayload = {
     rounds?: number | undefined;
     performedRounds?: number | undefined;
     performedRungs?: number | undefined;
+    performedMovements?: number | undefined;
     performedSeconds?: number | undefined;
     restBetweenRounds?: number | undefined;
     workDuration?: number | undefined;
@@ -536,6 +538,7 @@ export type CompletedWrapperPayload = {
       rounds?: number | undefined;
       performedRounds?: number | undefined;
       performedRungs?: number | undefined;
+      performedMovements?: number | undefined;
       performedSeconds?: number | undefined;
       restBetweenRounds?: number | undefined;
       workDuration?: number | undefined;
@@ -610,6 +613,7 @@ export type ClientHistoryPayload = {
       rounds?: number | undefined;
       performedRounds?: number | undefined;
       performedRungs?: number | undefined;
+      performedMovements?: number | undefined;
       performedSeconds?: number | undefined;
       restBetweenRounds?: number | undefined;
       workDuration?: number | undefined;

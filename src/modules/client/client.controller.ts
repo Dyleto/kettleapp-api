@@ -70,6 +70,7 @@ export const completeSession = catchAsync(
       performed,
       roundsDone,
       ladderDone,
+      chipperDone,
       clientNotes,
       completedAt,
     } = req.body as CompleteSessionBody;
@@ -111,6 +112,7 @@ export const completeSession = catchAsync(
       performed,
       roundsDone,
       ladderDone,
+      chipperDone,
     });
 
     const completed = await CompletedSession.create({
@@ -163,6 +165,7 @@ export const updateCompletedSession = catchAsync(
       performed,
       roundsDone,
       ladderDone,
+      chipperDone,
       clientNotes,
       completedAt,
     } = req.body as UpdateCompletedSessionBody;
@@ -193,7 +196,8 @@ export const updateCompletedSession = catchAsync(
     if (
       performed !== undefined ||
       roundsDone !== undefined ||
-      ladderDone !== undefined
+      ladderDone !== undefined ||
+      chipperDone !== undefined
     ) {
       // On repart du snapshot stocké et on ne réécrit que le réalisé :
       // la prescription enregistrée le jour de la séance reste intacte.
@@ -201,6 +205,7 @@ export const updateCompletedSession = catchAsync(
         performed,
         roundsDone,
         ladderDone,
+        chipperDone,
       });
       completed.set('blocks', blocks);
     }

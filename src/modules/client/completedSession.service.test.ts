@@ -9,6 +9,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  applyChipperDone,
   applyLadderDone,
   applyRoundsDone,
   applySessionResults,
@@ -133,7 +134,43 @@ describe('une échelle bornée', () => {
 });
 
 /**
- * Les trois passes ensemble, telles que la fin de séance et la correction
+ * Ce que `applyChipperDone` pose sur un instantané : les mouvements faits
+ * d'un chipper ou d'un TimeCap borné et le temps au chrono.
+ */
+describe('un chipper borné', () => {
+  const chipperBlocks = () => [
+    { order: 1, type: 'warmup' },
+    { order: 2, type: 'chipper', durationMinutes: 20 as number | undefined },
+  ];
+
+  it('rend les blocs tels quels quand rien n’est envoyé', () => {
+    const before = chipperBlocks();
+    expect(applyChipperDone(before, undefined)).toBe(before);
+    expect(applyChipperDone(before, [])).toBe(before);
+  });
+
+  it('pose les mouvements et le temps sur le bloc visé, et sur lui seul', () => {
+    const after = applyChipperDone(chipperBlocks(), [
+      { blockOrder: 2, movements: 3, seconds: 1200 },
+    ]);
+    expect(after[1]).toMatchObject({
+      performedMovements: 3,
+      performedSeconds: 1200,
+      durationMinutes: 20,
+    });
+    expect(after[0]).toEqual({ order: 1, type: 'warmup' });
+  });
+
+  it('enregistre zéro mouvement : la limite est tombée pendant le premier', () => {
+    const after = applyChipperDone(chipperBlocks(), [
+      { blockOrder: 2, movements: 0, seconds: 1200 },
+    ]);
+    expect(after[1].performedMovements).toBe(0);
+  });
+});
+
+/**
+ * Les quatre passes ensemble, telles que la fin de séance et la correction
  * d'un bilan les appliquent.
  */
 describe('tout ce que le client rend, en une fois', () => {
@@ -148,19 +185,29 @@ describe('tout ce que le client rend, en une fois', () => {
       type: 'ladder',
       exercises: [{ order: 1 }],
     },
+    {
+      order: 3,
+      type: 'chipper',
+      exercises: [{ order: 1 }],
+    },
   ];
 
-  it('pose le réalisé, les tours et l’échelle, chacun à sa place', () => {
+  it('pose le réalisé, les tours, l’échelle et le chipper, chacun à sa place', () => {
     const after = applySessionResults(session(), {
       performed: [{ blockOrder: 1, exerciseOrder: 1, sets: [{ reps: 10 }] }],
       roundsDone: [{ blockOrder: 1, rounds: 6 }],
       ladderDone: [{ blockOrder: 2, rungs: 5, seconds: 720 }],
+      chipperDone: [{ blockOrder: 3, movements: 2, seconds: 900 }],
     });
     expect(after[0].exercises[0].performed?.sets).toEqual([{ reps: 10 }]);
     expect(after[0]).toMatchObject({ performedRounds: 6 });
     expect(after[1]).toMatchObject({
       performedRungs: 5,
       performedSeconds: 720,
+    });
+    expect(after[2]).toMatchObject({
+      performedMovements: 2,
+      performedSeconds: 900,
     });
   });
 

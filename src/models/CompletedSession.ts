@@ -89,6 +89,11 @@ export interface IBlockSnapshot {
    * `repsScheme` et de `durationMinutes` qu'ils ne remplacent pas.
    */
   performedRungs?: number;
+  /**
+   * Les mouvements entièrement faits d'un chipper ou d'un TimeCap borné. Le
+   * temps au chrono est `performedSeconds`, partagé avec l'échelle.
+   */
+  performedMovements?: number;
   performedSeconds?: number;
   restBetweenRounds?: number;
   workDuration?: number;
@@ -196,6 +201,7 @@ const blockSnapshotSchema = new Schema(
     rounds: { type: Number },
     performedRounds: { type: Number },
     performedRungs: { type: Number },
+    performedMovements: { type: Number },
     performedSeconds: { type: Number },
     restBetweenRounds: { type: Number },
     workDuration: { type: Number },
