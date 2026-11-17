@@ -9,7 +9,7 @@
  * reporter le fichier ici. Le modifier ici ne changerait rien à ce que l'API
  * envoie — cela ferait seulement mentir les types.
  *
- * Empreinte : 05037fa5a985
+ * Empreinte : 959c3527d72b
  */
 
 export type CustomMetricPayload = { value: number; unit: string };
@@ -1165,6 +1165,7 @@ export type TemplateRowPayload = {
   _id: string;
   name: string;
   sessionCount: number;
+  usageCount: number;
   updatedAt: string;
 };
 

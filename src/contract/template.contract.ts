@@ -15,6 +15,8 @@ export const templateRowPayload = z.object({
   /** Combien de séances il porte — ce qui distingue « Débutant » de « Prépa
    * marathon » plus sûrement que leurs noms. */
   sessionCount: z.number(),
+  /** Chez combien de clients il a été importé — « jamais utilisé » à zéro. */
+  usageCount: z.number(),
   updatedAt: isoDate,
 });
 

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { sessionInputSchema } from '../program/program.schema';
+import { objectId } from '../../shared/schemas/params.schema';
 
 /**
  * Le nom d'un modèle.
@@ -57,6 +58,26 @@ export const importTemplateSchema = z.object({
   params: z.object({ clientId: z.string().min(1) }),
   body: z.object({ templateId: z.string().min(1) }),
 });
+
+/**
+ * « Enregistrer comme modèle » : depuis quel client, sous quel nom, et
+ * quelles séances — toutes quand la liste est absente.
+ *
+ * Une liste vide est refusée : elle ne demande rien, et la traiter comme
+ * « toutes » enregistrerait le programme entier depuis le menu d'une seule
+ * séance.
+ */
+export const templateFromProgramSchema = z.object({
+  body: z.object({
+    clientId: objectId,
+    name,
+    sessionIds: z.array(objectId).min(1).max(30).optional(),
+  }),
+});
+
+export type TemplateFromProgramBody = z.infer<
+  typeof templateFromProgramSchema
+>['body'];
 
 export type TemplateSessionsBody = z.infer<
   typeof updateTemplateSessionsSchema

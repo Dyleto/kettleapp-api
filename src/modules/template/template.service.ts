@@ -2,10 +2,13 @@ import { Types, isValidObjectId } from 'mongoose';
 import ProgramTemplate, {
   IProgramTemplate,
 } from '../../models/ProgramTemplate';
+import Program from '../../models/Program';
+import Session from '../../models/Session';
+import { getAuthorizedClient } from '../coach/coach.service';
 import { AppError } from '../../shared/utils/AppError';
 import { replaceProgramSessions } from '../program/program.service';
 import type { SessionInput } from '../program/program.schema';
-import type { ISession } from '../../models/Session';
+import type { ISession, ISessionBlock } from '../../models/Session';
 
 /**
  * Le modèle demandé, s'il appartient bien à ce coach.
@@ -139,5 +142,166 @@ export const importTemplate = async (
   // des sous-documents hydratés revient à leur faire traverser deux parents.
   const plain = template.toObject() as IProgramTemplate;
 
-  return replaceProgramSessions(clientId, sessionsForImport(plain), requestId);
+  const saved = await replaceProgramSessions(
+    clientId,
+    sessionsForImport(plain),
+    requestId
+  );
+  await recordImport(coachId, template._id, clientId);
+  return saved;
+};
+
+/**
+ * Retenir chez qui un modèle a été importé.
+ *
+ * Après l'import et non avant : un import qui échoue n'a rendu le modèle
+ * utile à personne. `$addToSet` pour qu'un second import chez le même
+ * client ne compte pas double.
+ *
+ * `timestamps: false` : la liste des modèles se trie sur la dernière
+ * modification, et importer ne modifie pas le modèle. Sans lui, le modèle
+ * importé passerait en tête comme si le coach venait de le retoucher.
+ */
+export const recordImport = (
+  coachId: Types.ObjectId,
+  templateId: Types.ObjectId,
+  clientId: Types.ObjectId
+) =>
+  ProgramTemplate.updateOne(
+    { _id: templateId, coachId },
+    { $addToSet: { importedFor: clientId } },
+    { timestamps: false }
+  );
+
+/**
+ * Une ligne de la liste des modèles.
+ *
+ * Le compteur d'usage est le nombre de clients retenus, pas d'imports : la
+ * ligne dit « utilisé chez 3 clients ».
+ */
+export const templateRow = (
+  template: Pick<IProgramTemplate, '_id' | 'name' | 'updatedAt'> & {
+    sessions?: unknown[];
+    importedFor?: unknown[];
+  }
+) => ({
+  _id: template._id,
+  name: template.name,
+  sessionCount: template.sessions?.length ?? 0,
+  usageCount: template.importedFor?.length ?? 0,
+  updatedAt: template.updatedAt,
+});
+
+/** Le plafond du nom d'un modèle, celui du schéma. */
+const NAME_MAX = 120;
+const COPY_SUFFIX = ' (copie)';
+
+/**
+ * Le nom d'une copie : « Prise de masse (copie) ».
+ *
+ * Le nom d'origine est raccourci s'il le faut pour que la mention tienne :
+ * un modèle au nom déjà long ne doit pas rendre sa copie impossible à
+ * enregistrer, ni perdre ce qui la distingue de l'original.
+ */
+export const copyName = (name: string): string =>
+  name.slice(0, NAME_MAX - COPY_SUFFIX.length).trimEnd() + COPY_SUFFIX;
+
+/** Ce qu'une séance de modèle peut porter, d'où qu'elle vienne. */
+type SessionSource = {
+  name?: string;
+  notes?: string;
+  suggestedDays?: number[];
+  blocks: ISessionBlock[];
+};
+
+/**
+ * Des séances, prêtes à devenir celles d'un nouveau modèle.
+ *
+ * Sans leurs identifiants ni leurs dates : ce sont de nouvelles séances, et
+ * Mongoose leur en donne. Garder ceux d'une séance de client lierait le
+ * modèle au programme qu'il a copié ; ceux d'un autre modèle feraient
+ * croire à l'atelier qu'il rouvre la même séance. Les blocs gardent les
+ * leurs, comme à l'import : ce sont des sous-documents de leur séance.
+ *
+ * Le rang vient de la position.
+ */
+export const templateSessionsFrom = (sessions: readonly SessionSource[]) =>
+  sessions.map((session, index) => ({
+    order: index + 1,
+    name: session.name ?? '',
+    notes: session.notes,
+    suggestedDays: session.suggestedDays ?? [],
+    blocks: session.blocks,
+  }));
+
+/**
+ * Dupliquer un modèle, sous un nom qui dit que c'est une copie.
+ *
+ * La copie n'a jamais été importée : son compteur part de zéro.
+ */
+export const duplicateTemplate = async (
+  coachId: Types.ObjectId,
+  templateId: string
+): Promise<IProgramTemplate> => {
+  const source = (await getOwnTemplate(coachId, templateId)).toObject();
+  const copy = await ProgramTemplate.create({
+    coachId,
+    name: copyName(source.name),
+    sessions: templateSessionsFrom(source.sessions),
+  });
+  await copy.populate('sessions.blocks.exercises.exerciseId');
+  return copy;
+};
+
+/**
+ * Les séances à enregistrer : toutes, ou celles qu'on a nommées, dans
+ * l'ordre du programme.
+ *
+ * L'ordre du programme et non celui de la demande : le modèle reprend la
+ * progression que le coach a construite. Une séance nommée qui n'est pas
+ * dans ce programme n'en fait pas partie.
+ */
+export const pickSessions = <S extends { _id: { toString(): string } }>(
+  sessions: readonly S[],
+  sessionIds?: readonly string[]
+): S[] => {
+  if (!sessionIds) return [...sessions];
+  const wanted = new Set(sessionIds);
+  return sessions.filter((session) => wanted.has(String(session._id)));
+};
+
+/**
+ * « Enregistrer comme modèle » : le programme d'un client, ou quelques-unes
+ * de ses séances, devient un modèle.
+ *
+ * Depuis le menu d'une séance (une seule) ou depuis le programme (tout). Le
+ * serveur relit les séances lui-même plutôt que de les recevoir, comme pour
+ * l'import : le modèle est ce que le coach a vraiment écrit chez ce client.
+ *
+ * Rien n'à enregistrer — un programme vide, des séances qui n'en sont pas —
+ * répond 404 plutôt que de créer un modèle vide que personne n'a demandé.
+ */
+export const templateFromProgram = async (
+  coachId: Types.ObjectId,
+  clientId: string,
+  name: string,
+  sessionIds?: readonly string[]
+): Promise<IProgramTemplate> => {
+  const client = await getAuthorizedClient(coachId, clientId);
+  const program = await Program.findOne({ clientId: client._id });
+  const sessions = program
+    ? await Session.find({ programId: program._id }).sort({ order: 1 }).lean()
+    : [];
+
+  const picked = pickSessions(sessions, sessionIds);
+  if (picked.length === 0)
+    throw new AppError('Aucune séance à enregistrer', 404);
+
+  const template = await ProgramTemplate.create({
+    coachId,
+    name,
+    sessions: templateSessionsFrom(picked),
+  });
+  await template.populate('sessions.blocks.exercises.exerciseId');
+  return template;
 };

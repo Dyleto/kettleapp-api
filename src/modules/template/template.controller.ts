@@ -16,11 +16,15 @@ import {
 } from '../../shared/utils/sessionFormatter';
 import { getAuthorizedClient } from '../coach/coach.service';
 import {
+  duplicateTemplate,
   getOwnTemplate,
   getOwnTemplatePopulated,
   importTemplate,
   replaceTemplateSessions,
+  templateFromProgram,
+  templateRow,
 } from './template.service';
+import type { TemplateFromProgramBody } from './template.schema';
 import type { IProgramTemplate } from '../../models/ProgramTemplate';
 
 /**
@@ -50,17 +54,12 @@ export const listTemplates = catchAsync(
     const coach = coachOf(res);
 
     const templates = await ProgramTemplate.find({ coachId: coach._id })
-      .select('name sessions updatedAt')
+      .select('name sessions importedFor updatedAt')
       .sort({ updatedAt: -1 })
       .lean();
 
     respond(res, 200, templateListPayload, {
-      templates: templates.map((template) => ({
-        _id: template._id,
-        name: template.name,
-        sessionCount: template.sessions?.length ?? 0,
-        updatedAt: template.updatedAt,
-      })),
+      templates: templates.map(templateRow),
     });
   }
 );
@@ -98,6 +97,31 @@ export const getTemplate = catchAsync(async (req: Request, res: Response) => {
 
   respond(res, 200, templateWrapperPayload, { template: payloadOf(template) });
 });
+
+/** Dupliquer un modèle : voir `duplicateTemplate`. */
+export const postDuplicate = catchAsync(async (req: Request, res: Response) => {
+  const copy = await duplicateTemplate(
+    coachOf(res)._id,
+    req.params.id as string
+  );
+  respond(res, 201, templateWrapperPayload, { template: payloadOf(copy) });
+});
+
+/** « Enregistrer comme modèle » : voir `templateFromProgram`. */
+export const postFromProgram = catchAsync(
+  async (req: Request, res: Response) => {
+    const { clientId, name, sessionIds } = req.body as TemplateFromProgramBody;
+    const template = await templateFromProgram(
+      coachOf(res)._id,
+      clientId,
+      name,
+      sessionIds
+    );
+    respond(res, 201, templateWrapperPayload, {
+      template: payloadOf(template),
+    });
+  }
+);
 
 // PATCH /api/coach/templates/:id
 export const renameTemplate = catchAsync(

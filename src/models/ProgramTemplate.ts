@@ -39,6 +39,15 @@ export interface IProgramTemplate extends Document {
   coachId: Types.ObjectId;
   name: string;
   sessions: ITemplateSession[];
+  /**
+   * Les clients chez qui il a été importé, chacun une fois.
+   *
+   * Des clients et non un compteur : la liste dit « utilisé chez 3
+   * clients », et réimporter le même modèle chez Sarah ne fait pas un
+   * client de plus. Indicatif — un client qui a remanié tout son programme
+   * depuis compte encore.
+   */
+  importedFor: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,6 +82,7 @@ const ProgramTemplateSchema = new Schema(
     // rang pour se nommer, un modèle n'a rien.
     name: { type: String, trim: true, required: true, maxlength: 120 },
     sessions: [templateSessionSchema],
+    importedFor: [{ type: Schema.Types.ObjectId, ref: 'Client' }],
   },
   { timestamps: true }
 );

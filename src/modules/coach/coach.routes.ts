@@ -37,6 +37,7 @@ import {
   importTemplateSchema,
   renameTemplateSchema,
   updateTemplateSessionsSchema,
+  templateFromProgramSchema,
 } from '../template/template.schema';
 
 const router = Router();
@@ -134,7 +135,19 @@ router.post(
   validate(createTemplateSchema),
   template.createTemplate
 );
+// Avant `/templates/:id` ne changerait rien — les verbes diffèrent — mais
+// la lecture suit : créer depuis un programme, puis ce qui vise un modèle.
+router.post(
+  '/templates/from-program',
+  validate(templateFromProgramSchema),
+  template.postFromProgram
+);
 router.get('/templates/:id', validate(idParamSchema), template.getTemplate);
+router.post(
+  '/templates/:id/duplicate',
+  validate(idParamSchema),
+  template.postDuplicate
+);
 router.patch(
   '/templates/:id',
   validate(renameTemplateSchema),
