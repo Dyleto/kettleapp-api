@@ -56,37 +56,18 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # Vitest a remplacé trois scripts `verify:*` qui portaient chacun leur
+      # Vitest a remplacé huit scripts `verify:*` qui portaient chacun leur
       # copie d'un `ok(label, condition)`. Il a trouvé deux défauts dans
       # l'heure : un paramètre par défaut qui rendait le cas « NODE_ENV absent »
       # inexprimable, et `/dev-login` sans schéma — que le script ne voyait pas
       # parce que la route n'était pas montée sous son ts-node.
+      #
+      # Tout y tourne sans base de données. `verify:copy` exige
+      # mongodb-memory-server, qui télécharge un binaire MongoDB : il n'est
+      # délibérément pas branché ici, faire dépendre la CI d'une étape que
+      # personne n'a jamais vue passer serait livrer une garantie qu'on n'a
+      # pas.
       - run: npm test
-
-  checks:
-    name: Vérifications à l'exécution
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-
-      # Tout ce qui tourne sans base de données, monté sur des applications
-      # Express nues : l'arité et le type de contenu du gestionnaire
-      # d'erreurs, ce que répond un garde oublié, ce que la validation fait
-      # d'une requête, les deux plafonds — quota et taille de corps — et le
-      # contrat de sortie.
-      - run: npm run verify
-
-      # `verify:copy` et `verify:rounds` exigent mongodb-memory-server, qui
-      # télécharge un binaire MongoDB au premier lancement. Délibérément pas
-      # branchés ici : ils n'ont jamais tourné du tout — la politique réseau
-      # de ce conteneur interdit le téléchargement — et faire dépendre la CI
-      # d'une étape que personne n'a jamais vue passer serait livrer une
-      # garantie qu'on n'a pas.
 
   production:
     name: Le build de production

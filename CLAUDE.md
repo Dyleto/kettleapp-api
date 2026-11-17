@@ -65,8 +65,8 @@ validée, donc un contrôleur qui lit `req.body` lit quelque chose qui a
 correspondu à un schéma. Ne jamais revenir en arrière là-dessus — c'est ce qui
 ferme le mass assignment.
 
-`verify:routes` le vérifie plutôt que de l'espérer : il parcourt la pile des
-vrais routeurs et refuse qu'une route lisant un corps ou un paramètre
+`src/routes.test.ts` le vérifie plutôt que de l'espérer : il parcourt la
+pile des vrais routeurs et refuse qu'une route lisant un corps ou un paramètre
 n'embarque pas `validateRequest`. Quatre y échappaient — `/auth/google-onetap`
 qui passait un jeton Google non validé à `google-auth-library`,
 `/client/health-consent` qui est l'écriture la plus sensible juridiquement de
@@ -113,38 +113,39 @@ Un script de sabotage doit vérifier qu'il a bien saboté quelque chose.
 
 ## Les vérifications
 
-`npm test` (Vitest) éprouve la logique pure et la structure : ce qui arrête le
-démarrage, la couverture des routes par les schémas, ce que la fin d'une
-séance laisse passer, et ce que décide `applySessionResults` — le réalisé des
-séries, les tours bouclés, le résultat d'une échelle ou d'un chipper. 86
-tests, sans base de données.
+`npm test` (Vitest) éprouve tout ce qui tourne sans base de données : ce qui
+arrête le démarrage, la couverture des routes par les schémas, ce que la fin
+d'une séance laisse passer, ce que décide `applySessionResults` — le réalisé
+des séries, les tours bouclés, le résultat d'une échelle ou d'un chipper — et,
+sur des applications Express nues montées avec supertest, le gestionnaire
+d'erreurs, les gardes, la validation, les plafonds et le contrat de sortie.
+141 tests.
 
-Il remplace trois scripts `verify:*`, et il a trouvé deux défauts dans l'heure
-qui a suivi son installation — ce qui dit assez ce que son absence coûtait.
-Un paramètre par défaut sur `devRoutesEnabled` rendait le cas « NODE_ENV
-absent » inexprimable : passer `undefined` relisait `process.env`, et
-l'assertion qui prétendait couvrir ce cas ne passait que parce que ts-node
-n'avait pas la variable. Et `/dev-login` n'avait aucun schéma, invisible au
-script puisque la route n'était pas montée sous son ts-node — alors que
-Vitest pose `NODE_ENV=test`.
+Il remplace huit scripts `verify:*`, qui portaient chacun sa copie d'un
+`ok(label, condition)`. Les trois premiers convertis lui ont valu deux défauts
+trouvés dans l'heure. Un paramètre par défaut sur `devRoutesEnabled` rendait
+le cas « NODE_ENV absent » inexprimable : passer `undefined` relisait
+`process.env`, et l'assertion ne passait que parce que ts-node n'avait pas la
+variable. Et `/dev-login` n'avait aucun schéma, invisible au script puisque la
+route n'était pas montée sous son ts-node — alors que Vitest pose
+`NODE_ENV=test`. Les cinq suivants ont rendu une assertion creuse : la fusion
+de la chaîne de requête restait verte une fois supprimée, parce que la route
+d'essai ne façonnait rien — la valeur validée et la brute étaient les mêmes.
 
-`npm run verify` garde les cinq suites qui montent une application Express :
-le gestionnaire d'erreurs, les gardes, la validation, les plafonds et le
-contrat de sortie. 87 assertions, et elles attendent leur tour de conversion —
-chacune porte encore sa propre copie d'un `ok(label, condition)`.
+`src/contract/contract.test.ts` éprouve de vrais documents Mongoose et non des
+objets ordinaires : c'est la seule façon de voir les chemins imbriqués vides,
+qui n'existent que sur un document.
 
-`verify:contract` éprouve de vrais documents Mongoose et non des objets
-ordinaires : c'est la seule façon de voir les chemins imbriqués vides, qui
-n'existent que sur un document.
+Une agrégation ne se teste pas sans base, mais ce qu'elle décidait si : un
+service fait tourner la requête, une fonction pure met en forme ce qui en
+revient. `roster.service` en est l'exemple — lire le lien de rattachement de
+CE coach, rendre absent un ressenti que `$first` rend `null` (et que le
+contrat refusait, ce qui faisait répondre 500 à toute la liste).
 
 `verify:copy` exige `mongodb-memory-server`, qui télécharge un binaire
 MongoDB : il n'est pas branché à la CI, et il ne peut pas l'être. À lancer
-depuis une machine en réseau avant un déploiement.
-
-`verify:rounds` était rangé avec lui, et à tort : `applyRoundsDone` est une
-fonction pure, le script n'ouvre aucune connexion. Il est dans la chaîne
-`verify`, donc dans la CI. La confusion lui a coûté de ne jamais tourner,
-alors que rien ne l'en empêchait.
+depuis une machine en réseau avant un déploiement. C'est le dernier script
+`verify:*`, hormis `verify:production` qui charge le build.
 
 ## Les migrations
 
@@ -186,5 +187,6 @@ framework d'interface pour du code que le serveur n'exécute jamais.
 ## Ce qui garde le projet
 
 La CI (`.github/workflows/ci.yml`) lance à chaque poussée : `typecheck`,
-`lint`, `format:check`, `build` et `verify`. Rien ne doit être fusionné sur une
+`lint`, `lint:langue`, `format:check`, `build`, `contract:check`, les tests
+et le build de production. Rien ne doit être fusionné sur une
 CI rouge.

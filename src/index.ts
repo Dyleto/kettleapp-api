@@ -3,6 +3,7 @@
 import './shared/config/loadEnv';
 
 import express from 'express';
+import { BODY_LIMIT } from './shared/config/limits';
 import cors from 'cors';
 import connectDB from './shared/config/db';
 import routes from './routes';
@@ -55,19 +56,8 @@ app.use(httpLogger);
 
 app.use(cookieParser());
 
-/**
- * Quelle taille un corps de requête peut atteindre.
- *
- * `express.json()` applique déjà un défaut de 100 Ko : la limite existait, elle
- * était seulement implicite — et trop basse pour la seule requête qui peut
- * légitimement grossir, l'atelier envoyant le programme entier à chaque
- * enregistrement. Mesuré, cinq séances de neuf blocs et dix-huit exercices
- * pèsent 5,4 Ko ; un programme vingt fois plus chargé atteint donc 107 Ko et
- * l'enregistrement échouerait sur un plafond que personne n'a choisi. 256 Ko
- * laisse une quarantaine de fois le programme d'essai et refuse toujours un
- * corps arbitraire.
- */
-app.use(express.json({ limit: '256kb' }));
+// La limite et sa mesure sont dans `config/limits.ts`.
+app.use(express.json({ limit: BODY_LIMIT }));
 
 // Avant les autres routes, et sans authentification : c'est l'adresse que
 // la plateforme interroge pour savoir si le service répond.
