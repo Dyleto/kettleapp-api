@@ -29,6 +29,14 @@ export const clientRowPayload = z.object({
   linkedAt: isoDate,
   /** Les étiquettes que CE coach lui a posées — jamais celles d'un autre. */
   tagIds: z.array(id).default([]),
+  /** Les séances faites depuis le début de la semaine du coach. */
+  weekDone: z.number(),
+  /** Les jours conseillés distincts du programme ; zéro, pas d'objectif. */
+  weekTarget: z.number(),
+  /** Zéro : le programme est à écrire. */
+  sessionCount: z.number(),
+  /** Les derniers ressentis, cinq au plus, du plus ancien au plus récent. */
+  recentEfforts: z.array(z.number()),
 });
 
 /** Une étiquette du coach. La couleur n'en fait pas partie : l'écran la

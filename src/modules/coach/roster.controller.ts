@@ -15,6 +15,7 @@ import {
   listClients,
   markHistoryViewed,
 } from './roster.service';
+import type { ClientsQuery } from './roster.schema';
 
 /**
  * La liste des clients du coach.
@@ -24,8 +25,9 @@ import {
  * un ressenti absent. Elles vivent dans `roster.service`, où elles se
  * testent sans base.
  */
-export const getClients = catchAsync(async (_req: Request, res: Response) => {
-  const clients = await listClients(coachOf(res)._id);
+export const getClients = catchAsync(async (req: Request, res: Response) => {
+  const { weekStart } = req.query as unknown as ClientsQuery;
+  const clients = await listClients(coachOf(res)._id, weekStart);
   respond(res, 200, z.array(clientRowPayload), clients);
 });
 

@@ -13,10 +13,10 @@ import {
 /**
  * Ce que l'agrégation rend pour un client, avant mise en forme.
  *
- * Les liens et les statistiques restent bruts : choisir le lien de CE coach
- * et décider de ce qu'est une absence se fait en JavaScript, où cela se
- * teste sans base — le reste de la liste en dépendra (D6 y ajoute la
- * semaine et les cinq derniers ressentis).
+ * Les liens, les statistiques, les programmes et les ressentis restent
+ * bruts : choisir le lien de CE coach, décider de ce qu'est une absence,
+ * compter les jours conseillés se fait en JavaScript, où cela se teste sans
+ * base.
  */
 export interface RawClientRow {
   _id: Types.ObjectId;
@@ -32,8 +32,33 @@ export interface RawClientRow {
     lastCompletedAt?: Date | null;
     lastEffort?: number | null;
     unseen?: number;
+    weekDone?: number;
   }[];
+  /** Le programme du client — un seul, mais `$lookup` rend une liste. */
+  programs?: { sessions: { suggestedDays?: number[] | null }[] }[];
+  /** Les derniers ressentis, du plus récent au plus ancien. */
+  efforts?: { effort?: number | null }[];
 }
+
+/** Combien de ressentis la ligne montre : la maquette en dessine cinq. */
+export const RECENT_EFFORTS = 5;
+
+/**
+ * Le lundi de la semaine de `now`, à minuit UTC.
+ *
+ * Le défaut seulement. La semaine d'un coach commence à son minuit à lui, et
+ * le serveur n'en connaît pas le fuseau : l'écran envoie le sien
+ * (`?weekStart=`), et compte ainsi comme l'accueil du client compte, sans
+ * qu'une séance faite le dimanche à 23 h à Paris tombe dans la semaine
+ * suivante.
+ */
+export const defaultWeekStart = (now: Date): Date => {
+  const day = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  );
+  day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7));
+  return day;
+};
 
 /**
  * La requête de la liste, en une seule agrégation.
@@ -44,7 +69,8 @@ export interface RawClientRow {
  * et sans elle chaque coach verrait tous les clients de Kettle.
  */
 export const clientRowsPipeline = (
-  coachId: Types.ObjectId
+  coachId: Types.ObjectId,
+  weekStart: Date
 ): PipelineStage[] => [
   { $match: { 'coaches.coachId': coachId } },
   {
@@ -76,10 +102,62 @@ export const clientRowsPipeline = (
             unseen: {
               $sum: { $cond: [{ $ne: ['$viewedByCoach', true] }, 1, 0] },
             },
+            // L'anneau de la ligne : les séances de la semaine, comptées
+            // dans le même passage.
+            weekDone: {
+              $sum: { $cond: [{ $gte: ['$completedAt', weekStart] }, 1, 0] },
+            },
           },
         },
       ],
       as: 'stats',
+    },
+  },
+  {
+    // Les cinq derniers ressentis. Une recherche à part plutôt qu'un
+    // `$push` dans le groupe : celui-ci empilerait tout l'historique du
+    // client pour n'en garder que cinq. Une séance sans ressenti n'en est
+    // pas un — un vieux bilan à cinq axes, une séance terminée sans se
+    // prononcer — et ne prend pas de place.
+    $lookup: {
+      from: 'completedsessions',
+      let: { clientId: '$_id' },
+      pipeline: [
+        {
+          $match: {
+            $expr: { $eq: ['$clientId', '$$clientId'] },
+            'feedback.effort': { $type: 'number' },
+          },
+        },
+        { $sort: { completedAt: -1 } },
+        { $limit: RECENT_EFFORTS },
+        { $project: { _id: 0, effort: '$feedback.effort' } },
+      ],
+      as: 'efforts',
+    },
+  },
+  {
+    // Les jours conseillés du programme : l'objectif de la semaine. Les
+    // séances seules, réduites à leurs jours — tout le reste est lourd.
+    $lookup: {
+      from: 'programs',
+      let: { clientId: '$_id' },
+      pipeline: [
+        { $match: { $expr: { $eq: ['$clientId', '$$clientId'] } } },
+        {
+          $lookup: {
+            from: 'sessions',
+            let: { programId: '$_id' },
+            pipeline: [
+              { $match: { $expr: { $eq: ['$programId', '$$programId'] } } },
+              { $project: { _id: 0, suggestedDays: 1 } },
+            ],
+            as: 'sessions',
+          },
+        },
+        { $project: { _id: 0, sessions: 1 } },
+      ],
+      as: 'programs',
     },
   },
   {
@@ -90,9 +168,41 @@ export const clientRowsPipeline = (
       picture: '$userDoc.picture',
       coaches: 1,
       stats: 1,
+      efforts: 1,
+      programs: 1,
     },
   },
 ];
+
+/**
+ * L'objectif de la semaine : les jours conseillés distincts du programme.
+ *
+ * La règle de l'accueil du client (`weekTarget` côté front), pour que
+ * l'anneau du coach et celui du client disent la même chose : deux séances
+ * conseillées le lundi se font l'une ou l'autre ce jour-là. Zéro sans jour
+ * conseillé, ou sans programme — l'écran affiche alors un tiret.
+ */
+export const weekTarget = (programs: RawClientRow['programs']): number =>
+  new Set(
+    (programs ?? []).flatMap((program) =>
+      program.sessions.flatMap((session) => session.suggestedDays ?? [])
+    )
+  ).size;
+
+/** Combien de séances le programme compte : zéro, c'est « programme à
+ * écrire ». */
+export const sessionCount = (programs: RawClientRow['programs']): number =>
+  (programs ?? []).reduce((sum, program) => sum + program.sessions.length, 0);
+
+/**
+ * Les derniers ressentis, du plus ancien au plus récent — l'ordre de
+ * lecture des points, la tendance se lit de gauche à droite.
+ */
+export const recentEfforts = (efforts: RawClientRow['efforts']): number[] =>
+  (efforts ?? [])
+    .map((entry) => entry.effort)
+    .filter((effort): effort is number => typeof effort === 'number')
+    .reverse();
 
 /**
  * Une ligne de la liste, telle que le contrat l'attend.
@@ -126,6 +236,10 @@ export const clientRow = (raw: RawClientRow, coachId: Types.ObjectId) => {
     linkedAt: link?.linkedAt,
     // Les siennes seulement : le lien est celui de CE coach.
     tagIds: link?.tagIds ?? [],
+    weekDone: stats?.weekDone ?? 0,
+    weekTarget: weekTarget(raw.programs),
+    sessionCount: sessionCount(raw.programs),
+    recentEfforts: recentEfforts(raw.efforts),
   };
 };
 
@@ -137,9 +251,12 @@ export const clientRow = (raw: RawClientRow, coachId: Types.ObjectId) => {
  * coach ouvre chaque fiche pour savoir laquelle demande son attention — le
  * travail qu'on veut lui éviter.
  */
-export const listClients = async (coachId: Types.ObjectId) => {
+export const listClients = async (
+  coachId: Types.ObjectId,
+  weekStart: Date = defaultWeekStart(new Date())
+) => {
   const rows = await Client.aggregate<RawClientRow>(
-    clientRowsPipeline(coachId)
+    clientRowsPipeline(coachId, weekStart)
   );
   return rows.map((row) => clientRow(row, coachId));
 };

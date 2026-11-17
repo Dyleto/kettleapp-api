@@ -119,7 +119,7 @@ d'une séance laisse passer, ce que décide `applySessionResults` — le réalis
 des séries, les tours bouclés, le résultat d'une échelle ou d'un chipper — et,
 sur des applications Express nues montées avec supertest, le gestionnaire
 d'erreurs, les gardes, la validation, les plafonds et le contrat de sortie.
-215 tests.
+229 tests.
 
 Il remplace huit scripts `verify:*`, qui portaient chacun sa copie d'un
 `ok(label, condition)`. Les trois premiers convertis lui ont valu deux défauts

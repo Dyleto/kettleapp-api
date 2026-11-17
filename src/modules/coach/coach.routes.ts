@@ -10,6 +10,7 @@ import {
 import * as invitation from './invitation.controller';
 import { generateInvitationSchema } from './invitation.schema';
 import * as roster from './roster.controller';
+import { clientsQuerySchema } from './roster.schema';
 import * as exercise from '../exercise/exercise.controller';
 import * as program from '../program/program.controller';
 import {
@@ -57,7 +58,7 @@ router.post(
 );
 
 // ── Les clients du coach ──────────────────────────────────────────────────
-router.get('/clients', roster.getClients);
+router.get('/clients', validate(clientsQuerySchema), roster.getClients);
 router.get('/clients/:id', validate(idParamSchema), roster.getClientDetails);
 router.get(
   '/clients/:id/history',

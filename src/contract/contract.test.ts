@@ -325,6 +325,14 @@ describe('la séance et le programme perdent leurs clés internes', () => {
 });
 
 describe('une ligne de liste ne porte pas une adresse e-mail', () => {
+  // Ce que la ligne compte toujours, même à zéro.
+  const week = {
+    weekDone: 0,
+    weekTarget: 0,
+    sessionCount: 0,
+    recentEfforts: [],
+  };
+
   it('l’adresse ne sort pas, ce qui ordonne la liste survit', () => {
     const output = clientRowPayload.parse({
       _id: oid(),
@@ -335,6 +343,7 @@ describe('une ligne de liste ne porte pas une adresse e-mail', () => {
       lastCompletedAt: new Date('2026-09-20T07:00:00.000Z'),
       lastEffort: 4,
       linkedAt: new Date('2026-06-01T09:00:00.000Z'),
+      ...week,
     });
     expect(output).not.toHaveProperty('email');
     expect(output).toMatchObject({
@@ -350,6 +359,7 @@ describe('une ligne de liste ne porte pas une adresse e-mail', () => {
         _id: oid(),
         unseenCount: 0,
         linkedAt: new Date(),
+        ...week,
       }).lastCompletedAt
     ).toBeUndefined();
   });
