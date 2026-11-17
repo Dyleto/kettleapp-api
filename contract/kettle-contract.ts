@@ -9,7 +9,7 @@
  * reporter le fichier ici. Le modifier ici ne changerait rien à ce que l'API
  * envoie — cela ferait seulement mentir les types.
  *
- * Empreinte : 8f20fe3e7baf
+ * Empreinte : 028d3d0f0408
  */
 
 export type CustomMetricPayload = { value: number; unit: string };
@@ -765,6 +765,353 @@ export type ClientDetailsPayload = {
   lastName?: string | undefined;
   picture?: string | undefined;
 };
+
+export type InboxItemPayload = {
+  client: {
+    _id: string;
+    firstName?: string | undefined;
+    lastName?: string | undefined;
+    picture?: string | undefined;
+  };
+  completed: {
+    _id: string;
+    originalSessionId: string;
+    sessionOrder: number;
+    blocks: {
+      type: string;
+      order: number;
+      exercises: {
+        exercise: Record<string, unknown>;
+        order: number;
+        sets?: number | undefined;
+        restBetweenSets?: number | undefined;
+        reps?: number | undefined;
+        duration?: number | undefined;
+        customMetric?: { value: number; unit: string } | undefined;
+        note?: string | undefined;
+        performed?:
+          | {
+              sets: {
+                weight?: number | undefined;
+                reps?: number | undefined;
+                duration?: number | undefined;
+              }[];
+            }
+          | undefined;
+      }[];
+      label?: string | undefined;
+      notes?: string | undefined;
+      durationMinutes?: number | undefined;
+      intervalMinutes?: number | undefined;
+      rounds?: number | undefined;
+      performedRounds?: number | undefined;
+      performedRungs?: number | undefined;
+      performedMovements?: number | undefined;
+      performedSeconds?: number | undefined;
+      restBetweenRounds?: number | undefined;
+      workDuration?: number | undefined;
+      restDuration?: number | undefined;
+      repsScheme?: number[] | undefined;
+    }[];
+    viewedByCoach: boolean;
+    replies: {
+      coachId: string;
+      firstName: string;
+      sentAt: string;
+      reaction?: 'clap' | 'strong' | 'fire' | undefined;
+      text?: string | undefined;
+      readAt?: string | undefined;
+    }[];
+    completedAt: string;
+    sessionName?: string | undefined;
+    coachNotes?: string | undefined;
+    feedback?:
+      | {
+          effort: number;
+          tags?:
+            | (
+                | 'poor_sleep'
+                | 'pain'
+                | 'stress'
+                | 'fatigue'
+                | 'illness'
+                | 'great_shape'
+              )[]
+            | undefined;
+          note?: string | undefined;
+        }
+      | undefined;
+    metrics?:
+      | {
+          stress: number;
+          mood: number;
+          energy: number;
+          sleep: number;
+          soreness: number;
+        }
+      | undefined;
+    clientNotes?: string | undefined;
+    editedAt?: string | undefined;
+  };
+  previous?:
+    | {
+        _id: string;
+        originalSessionId: string;
+        sessionOrder: number;
+        blocks: {
+          type: string;
+          order: number;
+          exercises: {
+            exercise: Record<string, unknown>;
+            order: number;
+            sets?: number | undefined;
+            restBetweenSets?: number | undefined;
+            reps?: number | undefined;
+            duration?: number | undefined;
+            customMetric?: { value: number; unit: string } | undefined;
+            note?: string | undefined;
+            performed?:
+              | {
+                  sets: {
+                    weight?: number | undefined;
+                    reps?: number | undefined;
+                    duration?: number | undefined;
+                  }[];
+                }
+              | undefined;
+          }[];
+          label?: string | undefined;
+          notes?: string | undefined;
+          durationMinutes?: number | undefined;
+          intervalMinutes?: number | undefined;
+          rounds?: number | undefined;
+          performedRounds?: number | undefined;
+          performedRungs?: number | undefined;
+          performedMovements?: number | undefined;
+          performedSeconds?: number | undefined;
+          restBetweenRounds?: number | undefined;
+          workDuration?: number | undefined;
+          restDuration?: number | undefined;
+          repsScheme?: number[] | undefined;
+        }[];
+        viewedByCoach: boolean;
+        replies: {
+          coachId: string;
+          firstName: string;
+          sentAt: string;
+          reaction?: 'clap' | 'strong' | 'fire' | undefined;
+          text?: string | undefined;
+          readAt?: string | undefined;
+        }[];
+        completedAt: string;
+        sessionName?: string | undefined;
+        coachNotes?: string | undefined;
+        feedback?:
+          | {
+              effort: number;
+              tags?:
+                | (
+                    | 'poor_sleep'
+                    | 'pain'
+                    | 'stress'
+                    | 'fatigue'
+                    | 'illness'
+                    | 'great_shape'
+                  )[]
+                | undefined;
+              note?: string | undefined;
+            }
+          | undefined;
+        metrics?:
+          | {
+              stress: number;
+              mood: number;
+              energy: number;
+              sleep: number;
+              soreness: number;
+            }
+          | undefined;
+        clientNotes?: string | undefined;
+        editedAt?: string | undefined;
+      }
+    | undefined;
+};
+
+export type InboxPayload = {
+  total: number;
+  items: {
+    client: {
+      _id: string;
+      firstName?: string | undefined;
+      lastName?: string | undefined;
+      picture?: string | undefined;
+    };
+    completed: {
+      _id: string;
+      originalSessionId: string;
+      sessionOrder: number;
+      blocks: {
+        type: string;
+        order: number;
+        exercises: {
+          exercise: Record<string, unknown>;
+          order: number;
+          sets?: number | undefined;
+          restBetweenSets?: number | undefined;
+          reps?: number | undefined;
+          duration?: number | undefined;
+          customMetric?: { value: number; unit: string } | undefined;
+          note?: string | undefined;
+          performed?:
+            | {
+                sets: {
+                  weight?: number | undefined;
+                  reps?: number | undefined;
+                  duration?: number | undefined;
+                }[];
+              }
+            | undefined;
+        }[];
+        label?: string | undefined;
+        notes?: string | undefined;
+        durationMinutes?: number | undefined;
+        intervalMinutes?: number | undefined;
+        rounds?: number | undefined;
+        performedRounds?: number | undefined;
+        performedRungs?: number | undefined;
+        performedMovements?: number | undefined;
+        performedSeconds?: number | undefined;
+        restBetweenRounds?: number | undefined;
+        workDuration?: number | undefined;
+        restDuration?: number | undefined;
+        repsScheme?: number[] | undefined;
+      }[];
+      viewedByCoach: boolean;
+      replies: {
+        coachId: string;
+        firstName: string;
+        sentAt: string;
+        reaction?: 'clap' | 'strong' | 'fire' | undefined;
+        text?: string | undefined;
+        readAt?: string | undefined;
+      }[];
+      completedAt: string;
+      sessionName?: string | undefined;
+      coachNotes?: string | undefined;
+      feedback?:
+        | {
+            effort: number;
+            tags?:
+              | (
+                  | 'poor_sleep'
+                  | 'pain'
+                  | 'stress'
+                  | 'fatigue'
+                  | 'illness'
+                  | 'great_shape'
+                )[]
+              | undefined;
+            note?: string | undefined;
+          }
+        | undefined;
+      metrics?:
+        | {
+            stress: number;
+            mood: number;
+            energy: number;
+            sleep: number;
+            soreness: number;
+          }
+        | undefined;
+      clientNotes?: string | undefined;
+      editedAt?: string | undefined;
+    };
+    previous?:
+      | {
+          _id: string;
+          originalSessionId: string;
+          sessionOrder: number;
+          blocks: {
+            type: string;
+            order: number;
+            exercises: {
+              exercise: Record<string, unknown>;
+              order: number;
+              sets?: number | undefined;
+              restBetweenSets?: number | undefined;
+              reps?: number | undefined;
+              duration?: number | undefined;
+              customMetric?: { value: number; unit: string } | undefined;
+              note?: string | undefined;
+              performed?:
+                | {
+                    sets: {
+                      weight?: number | undefined;
+                      reps?: number | undefined;
+                      duration?: number | undefined;
+                    }[];
+                  }
+                | undefined;
+            }[];
+            label?: string | undefined;
+            notes?: string | undefined;
+            durationMinutes?: number | undefined;
+            intervalMinutes?: number | undefined;
+            rounds?: number | undefined;
+            performedRounds?: number | undefined;
+            performedRungs?: number | undefined;
+            performedMovements?: number | undefined;
+            performedSeconds?: number | undefined;
+            restBetweenRounds?: number | undefined;
+            workDuration?: number | undefined;
+            restDuration?: number | undefined;
+            repsScheme?: number[] | undefined;
+          }[];
+          viewedByCoach: boolean;
+          replies: {
+            coachId: string;
+            firstName: string;
+            sentAt: string;
+            reaction?: 'clap' | 'strong' | 'fire' | undefined;
+            text?: string | undefined;
+            readAt?: string | undefined;
+          }[];
+          completedAt: string;
+          sessionName?: string | undefined;
+          coachNotes?: string | undefined;
+          feedback?:
+            | {
+                effort: number;
+                tags?:
+                  | (
+                      | 'poor_sleep'
+                      | 'pain'
+                      | 'stress'
+                      | 'fatigue'
+                      | 'illness'
+                      | 'great_shape'
+                    )[]
+                  | undefined;
+                note?: string | undefined;
+              }
+            | undefined;
+          metrics?:
+            | {
+                stress: number;
+                mood: number;
+                energy: number;
+                sleep: number;
+                soreness: number;
+              }
+            | undefined;
+          clientNotes?: string | undefined;
+          editedAt?: string | undefined;
+        }
+      | undefined;
+  }[];
+};
+
+export type ViewedPayload = { count: number };
 
 export type ActiveInvitationPayload = {
   token: string;

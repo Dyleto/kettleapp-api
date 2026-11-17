@@ -83,6 +83,9 @@ const PUBLISHED = [
     [
       'ClientRowPayload',
       'ClientDetailsPayload',
+      'InboxItemPayload',
+      'InboxPayload',
+      'ViewedPayload',
       'ActiveInvitationPayload',
       'GeneratedInvitationPayload',
       'LinkedCoachPayload',

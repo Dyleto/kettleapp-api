@@ -22,6 +22,8 @@ import {
 } from '../program/program.schema';
 import * as template from '../template/template.controller';
 import * as reply from '../reply/reply.controller';
+import * as inbox from '../inbox/inbox.controller';
+import { inboxQuerySchema, markViewedSchema } from '../inbox/inbox.schema';
 import { writeReplySchema } from '../reply/reply.schema';
 import {
   createTemplateSchema,
@@ -60,6 +62,16 @@ router.patch(
   '/clients/:id/history/mark-viewed',
   validate(idParamSchema),
   roster.markHistoryAsViewed
+);
+
+// ── À lire ────────────────────────────────────────────────────────────────
+// Le fil mêle les clients : il se lit et se marque par séance, pas par
+// fiche.
+router.get('/inbox', validate(inboxQuerySchema), inbox.getInbox);
+router.patch(
+  '/sessions/completed/viewed',
+  validate(markViewedSchema),
+  inbox.setViewed
 );
 
 // ── Répondre à une séance faite ───────────────────────────────────────────

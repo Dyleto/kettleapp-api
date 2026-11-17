@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { id, isoDate } from './primitives';
 import { healthConsentPayload } from './user.contract';
 import { programPayload } from './program.contract';
+import { completedSessionPayload } from './completed.contract';
 
 /**
  * Un client dans la liste du coach.
@@ -42,6 +43,47 @@ export const clientDetailsPayload = z.object({
   picture: z.string().optional(),
   program: programPayload,
   unseenCount: z.number(),
+});
+
+/**
+ * Une carte du fil « À lire » : qui, ce qui a été fait, et le passage d'avant.
+ *
+ * `previous` est la même séance, faite par le même client juste avant : la
+ * carte compare les charges et les tours (« Goblet Squat 26 kg ↗ ») et
+ * repère un « trop facile » qui se répète. L'envoyer évite au fil une
+ * requête par carte, et laisse la comparaison au front, qui sait déjà la
+ * faire pour le client.
+ *
+ * Le client sans adresse e-mail, comme dans la liste : la carte affiche un
+ * nom.
+ */
+export const inboxItemPayload = z.object({
+  client: z.object({
+    _id: id,
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    picture: z.string().optional(),
+  }),
+  completed: completedSessionPayload,
+  previous: completedSessionPayload.optional(),
+});
+
+/**
+ * Le fil, et combien il en reste.
+ *
+ * `total` compte tout ce qui correspond, même au-delà de ce qui est rendu :
+ * c'est le compteur de l'onglet, et un coach revenu de trois semaines de
+ * vacances doit lire « 99+ », pas le nombre de cartes chargées.
+ */
+export const inboxPayload = z.object({
+  total: z.number(),
+  items: z.array(inboxItemPayload),
+});
+
+/** Combien de séances ont changé d'état — celles d'un autre coach n'en font
+ * pas partie. */
+export const viewedPayload = z.object({
+  count: z.number(),
 });
 
 /**
@@ -100,6 +142,9 @@ export const accountSummaryPayload = z.object({
 });
 
 export type ClientRowPayload = z.infer<typeof clientRowPayload>;
+export type InboxItemPayload = z.infer<typeof inboxItemPayload>;
+export type InboxPayload = z.infer<typeof inboxPayload>;
+export type ViewedPayload = z.infer<typeof viewedPayload>;
 export type ClientDetailsPayload = z.infer<typeof clientDetailsPayload>;
 export type ActiveInvitationPayload = z.infer<typeof activeInvitationPayload>;
 export type GeneratedInvitationPayload = z.infer<
