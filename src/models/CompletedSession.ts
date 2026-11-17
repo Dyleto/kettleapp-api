@@ -178,6 +178,12 @@ export interface ICompletedSession extends Document {
   clientNotes?: string;
   viewedByCoach: boolean;
   replies: ICoachReply[];
+  /**
+   * La clé d'envoi posée par l'appareil, une par séance terminée : un
+   * renvoi après une réponse perdue retrouve son bilan au lieu d'en créer
+   * un second. Absente des bilans d'avant, et de ce qui sort.
+   */
+  sendKey?: string;
   completedAt: Date;
   editedAt?: Date;
 }
@@ -286,6 +292,7 @@ const CompletedSessionSchema = new Schema(
     clientNotes: { type: String },
     viewedByCoach: { type: Boolean, default: false },
     replies: { type: [coachReplySchema], default: [] },
+    sendKey: { type: String },
     completedAt: { type: Date, default: Date.now },
     editedAt: { type: Date },
   },
@@ -294,6 +301,13 @@ const CompletedSessionSchema = new Schema(
 
 CompletedSessionSchema.index({ clientId: 1, completedAt: -1 });
 CompletedSessionSchema.index({ clientId: 1, programId: 1 });
+// Une clé, un bilan, par client. Partiel : les bilans d'avant la clé n'en
+// portent pas, et ne doivent pas se heurter les uns aux autres sur
+// « absente ».
+CompletedSessionSchema.index(
+  { clientId: 1, sendKey: 1 },
+  { unique: true, partialFilterExpression: { sendKey: { $type: 'string' } } }
+);
 
 const CompletedSession = model<ICompletedSession>(
   'CompletedSession',

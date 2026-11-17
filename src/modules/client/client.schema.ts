@@ -119,6 +119,12 @@ export const completeSessionSchema = z.object({
       chipperDone: chipperDoneSchema.optional(),
       clientNotes: z.string().max(5000).optional(),
       completedAt: pastDate.optional(),
+      // La clé d'envoi : voir `receipt.service`. Facultative — une
+      // application qui n'a pas été rechargée depuis n'en pose pas.
+      sendKey: z
+        .string()
+        .regex(/^[A-Za-z0-9_-]{8,64}$/, 'La clé d’envoi n’est pas valide')
+        .optional(),
     })
     .refine(
       (body) => body.feedback !== undefined || body.metrics !== undefined,

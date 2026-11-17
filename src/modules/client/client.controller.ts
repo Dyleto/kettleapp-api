@@ -22,6 +22,7 @@ import {
   CARRIES_HEALTH_DATA,
 } from './healthConsent.service';
 import { applySessionResults } from './completedSession.service';
+import { alreadyReceived, recordOnce } from './receipt.service';
 import { coachesOf } from './coaches.service';
 import { isValidObjectId } from 'mongoose';
 import { respond } from '../../shared/utils/respond';
@@ -73,6 +74,7 @@ export const completeSession = catchAsync(
       chipperDone,
       clientNotes,
       completedAt,
+      sendKey,
     } = req.body as CompleteSessionBody;
     const rid = req.requestId ?? '?';
 
@@ -80,6 +82,19 @@ export const completeSession = catchAsync(
       clientId: client._id,
       sessionId,
     });
+
+    // Un renvoi d'un bilan déjà reçu : on rend celui-là, sans rien créer.
+    // 200 et non 201 — rien n'a été créé, et l'appareil n'a pas besoin de
+    // le distinguer pour effacer ce qu'il gardait.
+    const known = await alreadyReceived(client._id, sendKey);
+    if (known) {
+      logger.info(`[${rid}] completeSession: déjà reçu`, {
+        clientId: client._id,
+        completedId: known._id,
+      });
+      respond(res, 200, completedWrapperPayload, { completed: known });
+      return;
+    }
 
     const program = await Program.findOne({ clientId: client._id });
     if (!program) {
@@ -115,7 +130,7 @@ export const completeSession = catchAsync(
       chipperDone,
     });
 
-    const completed = await CompletedSession.create({
+    const { completed, created } = await recordOnce({
       clientId: client._id,
       programId: program._id,
       originalSessionId: session._id,
@@ -127,14 +142,16 @@ export const completeSession = catchAsync(
       ...(metrics ? { metrics } : {}),
       clientNotes: filterComment(clientNotes, client),
       ...(completedAt ? { completedAt: new Date(completedAt) } : {}),
+      ...(sendKey ? { sendKey } : {}),
     });
 
     logger.info(`[${rid}] completeSession: success`, {
       clientId: client._id,
       sessionId,
       completedId: completed._id,
+      created,
     });
-    respond(res, 201, completedWrapperPayload, { completed });
+    respond(res, created ? 201 : 200, completedWrapperPayload, { completed });
   }
 );
 
