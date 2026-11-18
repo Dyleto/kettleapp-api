@@ -10,6 +10,11 @@ import { HEALTH_CONSENT_VERSION } from '../../shared/constants/consent';
  * de déduire l'espace d'un simple drapeau, et ce que cette fonction résout en
  * un seul endroit plutôt qu'à chaque écran.
  *
+ * `coachId` sort pour un compte coach : une séance porte les réponses de
+ * chaque coach de son client, et l'écran doit reconnaître les siennes — la
+ * réaction allumée sur une carte, la réponse qu'il peut encore modifier.
+ * Le prénom n'y suffisait pas : deux coachs peuvent s'appeler Julie.
+ *
  * `needsHealthConsent` se calcule ici parce que le front ne connaît pas la
  * version courante du texte de consentement et n'a aucune raison de la
  * connaître. La question se repose si elle n'a jamais été posée, ou si le
@@ -32,6 +37,7 @@ export const buildUser = async (user: IUser) => {
     picture: user.picture,
     isAdmin: user.isAdmin,
     isCoach: !!coach,
+    ...(coach ? { coachId: coach._id } : {}),
     isClient: !!client,
     healthConsent: consent
       ? {

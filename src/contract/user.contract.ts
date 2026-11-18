@@ -31,6 +31,9 @@ export const userPayload = z.object({
   picture: z.string().optional(),
   isAdmin: z.boolean(),
   isCoach: z.boolean(),
+  /** Absent hors du rôle de coach : de quoi reconnaître ses propres
+   * réponses parmi celles d'un client suivi à deux. */
+  coachId: id.optional(),
   isClient: z.boolean(),
   healthConsent: healthConsentPayload.nullable(),
   needsHealthConsent: z.boolean(),
