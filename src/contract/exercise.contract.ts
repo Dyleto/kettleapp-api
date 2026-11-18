@@ -24,6 +24,12 @@ export const exercisePayload = z.object({
    * portent qu'un exercice — la fiche n'en a pas besoin.
    */
   usageCount: z.number().optional(),
+  /**
+   * Chez combien de clients du coach ces séances se trouvent. La fiche le
+   * dit avant qu'on modifie l'exercice : ce qui change là change chez
+   * chacun d'eux. Absent comme `usageCount`, pour la même raison.
+   */
+  clientCount: z.number().optional(),
 });
 
 export type ExercisePayload = z.infer<typeof exercisePayload>;

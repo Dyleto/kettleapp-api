@@ -9,7 +9,7 @@
  * reporter le fichier ici. Le modifier ici ne changerait rien à ce que l'API
  * envoie — cela ferait seulement mentir les types.
  *
- * Empreinte : c9d47ed51066
+ * Empreinte : 9b34914de49e
  */
 
 export type CustomMetricPayload = { value: number; unit: string };
@@ -82,6 +82,7 @@ export type ExercisePayload = {
   description?: string | undefined;
   videoUrl?: string | undefined;
   usageCount?: number | undefined;
+  clientCount?: number | undefined;
 };
 
 /**
@@ -113,6 +114,7 @@ export type BlockExercisePayload = {
     description?: string | undefined;
     videoUrl?: string | undefined;
     usageCount?: number | undefined;
+    clientCount?: number | undefined;
   };
   order: number;
   sets?: number | undefined;
@@ -147,6 +149,7 @@ export type SessionBlockPayload = {
       description?: string | undefined;
       videoUrl?: string | undefined;
       usageCount?: number | undefined;
+      clientCount?: number | undefined;
     };
     order: number;
     sets?: number | undefined;
@@ -194,6 +197,7 @@ export type SessionPayload = {
         description?: string | undefined;
         videoUrl?: string | undefined;
         usageCount?: number | undefined;
+        clientCount?: number | undefined;
       };
       order: number;
       sets?: number | undefined;
@@ -251,6 +255,7 @@ export type ProgramPayload = {
           description?: string | undefined;
           videoUrl?: string | undefined;
           usageCount?: number | undefined;
+          clientCount?: number | undefined;
         };
         order: number;
         sets?: number | undefined;
@@ -310,6 +315,7 @@ export type ClientProgramPayload = {
             description?: string | undefined;
             videoUrl?: string | undefined;
             usageCount?: number | undefined;
+            clientCount?: number | undefined;
           };
           order: number;
           sets?: number | undefined;
@@ -745,6 +751,7 @@ export type ClientDetailsPayload = {
             description?: string | undefined;
             videoUrl?: string | undefined;
             usageCount?: number | undefined;
+            clientCount?: number | undefined;
           };
           order: number;
           sets?: number | undefined;
@@ -1201,6 +1208,7 @@ export type TemplatePayload = {
           description?: string | undefined;
           videoUrl?: string | undefined;
           usageCount?: number | undefined;
+          clientCount?: number | undefined;
         };
         order: number;
         sets?: number | undefined;

@@ -2,68 +2,17 @@ import { Request, Response } from 'express';
 import { catchAsync } from '../../shared/utils/catchAsync';
 import { AppError } from '../../shared/utils/AppError';
 import { coachOf } from '../../shared/middleware/roles';
-import Client from '../../models/Client';
 import Exercise from '../../models/Exercise';
 import Session from '../../models/Session';
 import { Types } from 'mongoose';
 import { respond } from '../../shared/utils/respond';
 import { exercisePayload } from '../../contract';
 import { z } from 'zod';
+import { exerciseUsage } from './exercise.service';
 
 /**
- * Dans combien de séances du coach chaque exercice apparaît.
- *
- * Ce compteur est ce qui rend la bibliothèque utilisable : sans lui, rien ne
- * distingue l'exercice qu'on place à chaque séance de celui qu'on a créé par
- * erreur il y a six mois — et c'est justement celui-là qu'on veut pouvoir
- * supprimer.
- *
- * La chaîne part de Client (index `coaches.coachId`) puis suit
- * `programs.clientId` et `sessions.programId`, tous deux indexés. Elle coûte
- * néanmoins une agrégation complète à chaque ouverture de la bibliothèque :
- * si le coût devient sensible, c'est ici qu'il faudra un cache, pas ailleurs.
- */
-const getExerciseUsage = async (
-  coachId: Types.ObjectId
-): Promise<Map<string, number>> => {
-  const rows = await Client.aggregate<{ _id: Types.ObjectId; count: number }>([
-    { $match: { 'coaches.coachId': coachId } },
-    { $project: { _id: 1 } },
-    {
-      $lookup: {
-        from: 'programs',
-        localField: '_id',
-        foreignField: 'clientId',
-        as: 'programs',
-      },
-    },
-    { $unwind: '$programs' },
-    {
-      $lookup: {
-        from: 'sessions',
-        localField: 'programs._id',
-        foreignField: 'programId',
-        as: 'sessions',
-      },
-    },
-    { $unwind: '$sessions' },
-    { $unwind: '$sessions.blocks' },
-    { $unwind: '$sessions.blocks.exercises' },
-    {
-      $group: {
-        _id: '$sessions.blocks.exercises.exerciseId',
-        // Un exercice placé deux fois dans la même séance compte pour une.
-        sessionIds: { $addToSet: '$sessions._id' },
-      },
-    },
-    { $project: { count: { $size: '$sessionIds' } } },
-  ]);
-
-  return new Map(rows.map((row) => [String(row._id), row.count]));
-};
-
-/**
- * La bibliothèque du coach, chaque exercice avec son nombre d'usages.
+ * La bibliothèque du coach, chaque exercice avec son usage : combien de
+ * séances, chez combien de clients.
  *
  * Les deux requêtes partent ensemble : le compteur ne dépend pas de la liste,
  * et les enchaîner doublerait l'attente pour rien.
@@ -73,17 +22,21 @@ export const getExercises = catchAsync(async (req: Request, res: Response) => {
 
   const [exercises, usage] = await Promise.all([
     Exercise.find({ createdBy: coach._id }).sort({ name: 1 }).lean(),
-    getExerciseUsage(coach._id as Types.ObjectId),
+    exerciseUsage(coach._id as Types.ObjectId),
   ]);
 
   respond(
     res,
     200,
     z.array(exercisePayload),
-    exercises.map((exercise) => ({
-      ...exercise,
-      usageCount: usage.get(String(exercise._id)) ?? 0,
-    }))
+    exercises.map((exercise) => {
+      const used = usage.get(String(exercise._id));
+      return {
+        ...exercise,
+        usageCount: used?.sessions ?? 0,
+        clientCount: used?.clients ?? 0,
+      };
+    })
   );
 });
 
