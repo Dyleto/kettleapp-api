@@ -5,6 +5,7 @@ import Session from '../../models/Session';
 import CompletedSession from '../../models/CompletedSession';
 import { getAuthorizedClient } from './coach.service';
 import { getOrCreate } from '../program/program.service';
+import { sharingAllowed } from '../client/healthConsent.service';
 import {
   PopulatedSession,
   formatSession,
@@ -295,6 +296,12 @@ export const historyWindow = (query: { page?: unknown; limit?: unknown }) => {
  * `unseenCount` voyage avec le reste plutôt que par un appel séparé — c'est
  * l'information qui décide si la pastille du journal s'allume, et la demander
  * à part ferait clignoter cette pastille à chaque ouverture.
+ *
+ * `sharesHealthData` dit pourquoi un ressenti n'a ni étiquette ni mot. Sans
+ * lui, l'écran des ressentis ne distinguait pas un client qui n'écrit rien
+ * d'un client dont on n'a pas le droit de garder ce qu'il écrit — et le
+ * coach relançait le second pour un silence que le serveur avait imposé.
+ * C'est la même règle que celle qui filtre à l'écriture, pas une copie.
  */
 export const clientDetails = async (
   coachId: Types.ObjectId,
@@ -327,6 +334,7 @@ export const clientDetails = async (
     picture: client.userId.picture,
     program: { ...program.toObject(), sessions },
     unseenCount,
+    sharesHealthData: sharingAllowed(client),
   };
 };
 

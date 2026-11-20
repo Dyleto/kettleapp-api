@@ -9,7 +9,7 @@
  * reporter le fichier ici. Le modifier ici ne changerait rien à ce que l'API
  * envoie — cela ferait seulement mentir les types.
  *
- * Empreinte : 9b34914de49e
+ * Empreinte : ac9adea4cc02
  */
 
 export type CustomMetricPayload = { value: number; unit: string };
@@ -779,6 +779,7 @@ export type ClientDetailsPayload = {
     }[];
   };
   unseenCount: number;
+  sharesHealthData: boolean;
   firstName?: string | undefined;
   lastName?: string | undefined;
   picture?: string | undefined;

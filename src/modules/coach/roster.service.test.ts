@@ -6,8 +6,13 @@
  * lire, ce qu'est une absence, et les bornes d'une page d'historique.
  */
 import { Types } from 'mongoose';
-import { describe, expect, it } from 'vitest';
-import { clientRowPayload } from '../../contract';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import Client, { type HealthConsent } from '../../models/Client';
+import Program from '../../models/Program';
+import Session from '../../models/Session';
+import CompletedSession from '../../models/CompletedSession';
+import { HEALTH_CONSENT_VERSION } from '../../shared/constants/consent';
+import { clientDetailsPayload, clientRowPayload } from '../../contract';
 import { clientsQuerySchema } from './roster.schema';
 import {
   HISTORY_PAGE,
@@ -19,6 +24,7 @@ import {
   RawClientRow,
   clientRow,
   clientRowsPipeline,
+  clientDetails,
   historyWindow,
 } from './roster.service';
 
@@ -274,5 +280,59 @@ describe('les derniers ressentis', () => {
       JULIE
     );
     expect(clientRowPayload.safeParse(shaped).success).toBe(true);
+  });
+});
+
+describe('la fiche dit si le client partage ses données de santé', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  // Les lectures sont remplacées par ce qu'elles rendraient : c'est le
+  // service entier qui tourne, du lien de rattachement à la réponse.
+  const detailsFor = async (healthConsent?: HealthConsent) => {
+    const client = { _id: SARAH, healthConsent };
+    vi.spyOn(Client, 'findOne').mockResolvedValue({
+      ...client,
+      populate: async () => ({
+        ...client,
+        userId: { firstName: 'Sarah', email: 'sarah@example.com' },
+      }),
+    } as never);
+    vi.spyOn(Program, 'findOneAndUpdate').mockResolvedValue({
+      toObject: () => ({
+        _id: SARAH,
+        createdAt: new Date('2026-06-01T09:00:00Z'),
+        updatedAt: new Date('2026-06-01T09:00:00Z'),
+      }),
+    } as never);
+    vi.spyOn(Session, 'find').mockReturnValue({
+      sort: () => ({ populate: () => ({ lean: async () => [] }) }),
+    } as never);
+    vi.spyOn(CompletedSession, 'countDocuments').mockResolvedValue(0 as never);
+    return clientDetails(JULIE, SARAH.toHexString());
+  };
+  const decided = (granted: boolean, version = HEALTH_CONSENT_VERSION) => ({
+    granted,
+    version,
+    decidedAt: new Date('2026-09-02T08:00:00Z'),
+  });
+
+  it('un accord au texte en vigueur : il partage', async () => {
+    const details = await detailsFor(decided(true));
+    expect(details.sharesHealthData).toBe(true);
+    expect(clientDetailsPayload.safeParse(details).success).toBe(true);
+  });
+
+  // Le cas que l'écran doit dire : ses ressentis n'ont ni étiquette ni mot,
+  // et ce n'est pas lui qui se tait.
+  it('un refus, ou jamais de réponse : il ne partage pas', async () => {
+    expect((await detailsFor(decided(false))).sharesHealthData).toBe(false);
+    expect((await detailsFor(undefined)).sharesHealthData).toBe(false);
+  });
+
+  // La même règle qu'à l'écriture : un accord à un ancien texte ne vaut
+  // plus, et le serveur ne garde déjà plus ce qu'il écrit.
+  it('un accord à un ancien texte ne vaut plus', async () => {
+    const details = await detailsFor(decided(true, '2025-01'));
+    expect(details.sharesHealthData).toBe(false);
   });
 });

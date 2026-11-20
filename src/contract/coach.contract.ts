@@ -66,6 +66,9 @@ export const clientDetailsPayload = z.object({
   picture: z.string().optional(),
   program: programPayload,
   unseenCount: z.number(),
+  /** Faux : ses ressentis n'ont ni étiquette ni mot, et ce n'est pas un
+   * silence de sa part — voir `clientDetails`. */
+  sharesHealthData: z.boolean(),
 });
 
 /**
