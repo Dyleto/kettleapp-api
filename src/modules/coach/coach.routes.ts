@@ -61,6 +61,7 @@ router.post(
 // ── Les clients du coach ──────────────────────────────────────────────────
 router.get('/clients', validate(clientsQuerySchema), roster.getClients);
 router.get('/clients/:id', validate(idParamSchema), roster.getClientDetails);
+router.delete('/clients/:id', validate(idParamSchema), roster.removeClient);
 router.get(
   '/clients/:id/history',
   validate(idParamSchema),

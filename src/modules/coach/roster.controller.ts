@@ -14,6 +14,7 @@ import {
   clientHistory,
   listClients,
   markHistoryViewed,
+  unlinkClient,
 } from './roster.service';
 import type { ClientsQuery } from './roster.schema';
 
@@ -61,3 +62,10 @@ export const markHistoryAsViewed = catchAsync(
     respond(res, 200, successPayload, { status: 'success' });
   }
 );
+
+/** « Retirer de mes clients » : voir `unlinkClient` — le lien part, le
+ * compte et l'historique restent au client. */
+export const removeClient = catchAsync(async (req: Request, res: Response) => {
+  await unlinkClient(coachOf(res)._id, req.params.id as string);
+  respond(res, 200, successPayload, { status: 'success' });
+});

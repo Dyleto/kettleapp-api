@@ -26,6 +26,7 @@ import {
   clientRowsPipeline,
   clientDetails,
   historyWindow,
+  unlinkClient,
 } from './roster.service';
 
 // Des identifiants écrits plutôt qu'engendrés : deux décors identiques
@@ -334,5 +335,34 @@ describe('la fiche dit si le client partage ses données de santé', () => {
   it('un accord à un ancien texte ne vaut plus', async () => {
     const details = await detailsFor(decided(true, '2025-01'));
     expect(details.sharesHealthData).toBe(false);
+  });
+});
+
+describe('retirer un client', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  // Un filtre qui autorise s'éprouve par ce qu'il demande : remplacée, la
+  // lecture ne regarde pas son filtre, et retirer le coach de la requête
+  // laisserait tout vert.
+  it('ne défait que le lien de CE coach, et le cherche avec lui', async () => {
+    const update = vi
+      .spyOn(Client, 'updateOne')
+      .mockResolvedValue({ matchedCount: 1 } as never);
+    await unlinkClient(JULIE, String(SARAH));
+    expect(update).toHaveBeenCalledWith(
+      { _id: String(SARAH), 'coaches.coachId': JULIE },
+      { $pull: { coaches: { coachId: JULIE } } }
+    );
+  });
+
+  // Ni « il existe », ni « il est à un autre » : un 404, comme un inconnu.
+  it('un client qui n’est pas le sien répond comme un inconnu', async () => {
+    vi.spyOn(Client, 'updateOne').mockResolvedValue({
+      matchedCount: 0,
+    } as never);
+    await expect(unlinkClient(MARC, String(SARAH))).rejects.toMatchObject({
+      statusCode: 404,
+      message: 'Client non trouvé',
+    });
   });
 });

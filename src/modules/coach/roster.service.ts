@@ -4,6 +4,7 @@ import { IUser } from '../../models/User';
 import Session from '../../models/Session';
 import CompletedSession from '../../models/CompletedSession';
 import { getAuthorizedClient } from './coach.service';
+import { AppError } from '../../shared/utils/AppError';
 import { getOrCreate } from '../program/program.service';
 import { sharingAllowed } from '../client/healthConsent.service';
 import {
@@ -372,4 +373,28 @@ export const markHistoryViewed = async (
     { clientId: client._id, viewedByCoach: { $ne: true } },
     { $set: { viewedByCoach: true } }
   );
+};
+
+/**
+ * Retirer un client de son suivi : défaire le lien de CE coach, et lui
+ * seul.
+ *
+ * Le compte du client, son programme et son historique restent les siens —
+ * il peut suivre un autre coach, ou revenir par une invitation. Les
+ * étiquettes que ce coach lui avait posées vivent sur le lien et partent
+ * avec lui ; celles d'un autre coach ne bougent pas.
+ *
+ * Le filtre porte le coach : sans lui, connaître un identifiant de client
+ * suffirait à le détacher de n'importe qui. Un client qui n'est pas suivi
+ * par ce coach répond comme un client inconnu, sans dire s'il existe.
+ */
+export const unlinkClient = async (
+  coachId: Types.ObjectId,
+  clientId: string
+): Promise<void> => {
+  const { matchedCount } = await Client.updateOne(
+    { _id: clientId, 'coaches.coachId': coachId },
+    { $pull: { coaches: { coachId } } }
+  );
+  if (matchedCount === 0) throw new AppError('Client non trouvé', 404);
 };
