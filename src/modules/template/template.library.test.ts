@@ -74,7 +74,7 @@ describe('le compteur d’usage', () => {
       name: 'Prise de masse',
       updatedAt: new Date('2026-11-01'),
       // Trois séances, deux clients : deux nombres qui ne se confondent pas.
-      sessions: [{}, {}, {}],
+      sessions: [1, 2, 3].map((order) => ({ _id: `s${order}`, order })),
       importedFor: [SARAH, KARIM],
     });
     expect(row.usageCount).toBe(2);
@@ -88,6 +88,39 @@ describe('le compteur d’usage', () => {
       updatedAt: new Date('2026-11-01'),
     });
     expect(row.usageCount).toBe(0);
+    expect(templateRowPayload.safeParse(row).success).toBe(true);
+  });
+
+  // La carte d'un modèle montre ses premières séances : dans l'ordre de
+  // l'atelier, pas dans celui du document.
+  it('l’aperçu : les quatre premières séances par rang, et leurs blocs', () => {
+    const session = (order: number, types: string[]) => ({
+      _id: new Types.ObjectId(`64c00000000000000000000${order}`),
+      order,
+      name: `Séance ${order}`,
+      blocks: types.map((type) => ({ type })),
+    });
+    const row = templateRow({
+      _id: TEMPLATE,
+      name: 'Prépa',
+      updatedAt: new Date('2026-11-01'),
+      sessions: [
+        session(3, ['emom']),
+        session(1, ['warmup', 'classic']),
+        session(5, ['amrap']),
+        session(2, ['tabata']),
+        session(4, []),
+      ],
+    });
+    expect(
+      row.preview.map((p) => [p.order, p.name, p.blockTypes.join('+')])
+    ).toEqual([
+      [1, 'Séance 1', 'warmup+classic'],
+      [2, 'Séance 2', 'tabata'],
+      [3, 'Séance 3', 'emom'],
+      [4, 'Séance 4', ''],
+    ]);
+    expect(row.sessionCount).toBe(5);
     expect(templateRowPayload.safeParse(row).success).toBe(true);
   });
 

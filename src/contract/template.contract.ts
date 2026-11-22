@@ -1,14 +1,33 @@
 import { z } from 'zod';
 import { id, isoDate } from './primitives';
 import { sessionPayload } from './program.contract';
+import { BLOCK_TYPES } from '../models/Session';
 
 /**
  * Une ligne de la liste des modèles.
  *
- * Les séances n'en font pas partie : la liste sert à choisir, et le coach
- * choisit sur un nom et un volume. Les envoyer toutes rendrait la page du
- * poids de tous ses programmes pour afficher trois titres.
+ * Les séances n'en font pas partie, seulement un aperçu des premières : la
+ * liste sert à choisir, et le coach choisit sur un nom, un volume et ce
+ * qu'il reconnaît d'un coup d'œil. Les envoyer toutes rendrait la page du
+ * poids de tous ses programmes pour trois cartes.
  */
+/**
+ * Une séance d'un modèle, vue de la liste : son rang, son nom et les types
+ * de ses blocs — de quoi dessiner sa barre de composition sur la carte.
+ *
+ * Pas la séance entière : la carte ne montre ni charges ni répétitions, et
+ * les exercices ne sont même pas résolus à cette étape (la liste ne fait
+ * pas de `populate`). Pas de durée non plus : l'estimer demande tout le
+ * contenu des blocs, et la liste resterait du poids de tous les programmes
+ * pour un « ≈ 80 min ».
+ */
+export const templateSessionPreviewPayload = z.object({
+  _id: id,
+  order: z.number(),
+  name: z.string().optional(),
+  blockTypes: z.array(z.enum(BLOCK_TYPES)),
+});
+
 export const templateRowPayload = z.object({
   _id: id,
   name: z.string(),
@@ -17,6 +36,9 @@ export const templateRowPayload = z.object({
   sessionCount: z.number(),
   /** Chez combien de clients il a été importé — « jamais utilisé » à zéro. */
   usageCount: z.number(),
+  /** Les quatre premières séances, dans l'ordre : la carte les montre, puis
+   * « + 2 séances » d'après `sessionCount`. */
+  preview: z.array(templateSessionPreviewPayload),
   updatedAt: isoDate,
 });
 

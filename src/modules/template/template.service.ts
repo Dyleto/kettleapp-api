@@ -173,15 +173,28 @@ export const recordImport = (
     { timestamps: false }
   );
 
+/** Ce que la liste lit d'une séance de modèle, sans `populate`. */
+type PreviewSource = {
+  _id: unknown;
+  order: number;
+  name?: string;
+  blocks?: { type: string }[];
+};
+
+/** Combien de séances la carte d'un modèle montre. */
+export const PREVIEW_SESSIONS = 4;
+
 /**
  * Une ligne de la liste des modèles.
  *
  * Le compteur d'usage est le nombre de clients retenus, pas d'imports : la
- * ligne dit « utilisé chez 3 clients ».
+ * ligne dit « utilisé chez 3 clients ». L'aperçu suit l'ordre des séances
+ * et non celui du tableau : un modèle réordonné dans l'atelier garde ses
+ * séances à leur place dans le document.
  */
 export const templateRow = (
   template: Pick<IProgramTemplate, '_id' | 'name' | 'updatedAt'> & {
-    sessions?: unknown[];
+    sessions?: PreviewSource[];
     importedFor?: unknown[];
   }
 ) => ({
@@ -189,6 +202,15 @@ export const templateRow = (
   name: template.name,
   sessionCount: template.sessions?.length ?? 0,
   usageCount: template.importedFor?.length ?? 0,
+  preview: [...(template.sessions ?? [])]
+    .sort((a, b) => a.order - b.order)
+    .slice(0, PREVIEW_SESSIONS)
+    .map((session) => ({
+      _id: session._id,
+      order: session.order,
+      name: session.name,
+      blockTypes: (session.blocks ?? []).map((block) => block.type),
+    })),
   updatedAt: template.updatedAt,
 });
 
