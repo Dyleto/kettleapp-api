@@ -369,6 +369,7 @@ describe('la création d’un coach ne renvoie plus deux documents', () => {
   it('le coach créé ne porte que de quoi le nommer', () => {
     const output = createdCoachPayload.parse({
       status: 'success',
+      outcome: 'created',
       message: 'Coach créé avec succès',
       coach: {
         _id: oid(),
@@ -379,11 +380,30 @@ describe('la création d’un coach ne renvoie plus deux documents', () => {
         __v: 0,
       },
     });
-    expect(keys(output.coach)).toEqual([
+    expect(output.status === 'success' && keys(output.coach)).toEqual([
       '_id',
       'email',
       'firstName',
       'lastName',
+    ]);
+    expect(output).not.toHaveProperty('message');
+  });
+
+  // La question ne porte ni l'identifiant du compte ni rien d'autre que
+  // son nom : l'administrateur n'a pas encore décidé d'y toucher.
+  it('un compte trouvé ne sort que nommé, sans identifiant', () => {
+    const output = createdCoachPayload.parse({
+      status: 'exists',
+      account: {
+        _id: oid(),
+        firstName: 'Inès',
+        email: 'ines@example.com',
+        isAdmin: false,
+      },
+    });
+    expect(output.status === 'exists' && keys(output.account)).toEqual([
+      'email',
+      'firstName',
     ]);
   });
 });
