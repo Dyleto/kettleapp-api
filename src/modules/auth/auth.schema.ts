@@ -52,6 +52,21 @@ export const verifyInviteTokenSchema = z.object({
 });
 
 /**
+ * Rejoindre un coach avec le compte déjà ouvert (F9).
+ *
+ * Le jeton vient dans le corps, et seulement lui : le compte est celui de
+ * la session, jamais un identifiant que le front enverrait — sans quoi
+ * n'importe qui rattacherait n'importe qui.
+ */
+export const joinSchema = z.object({
+  body: z.object({
+    invitationToken: z
+      .string({ message: "Le jeton d'invitation est requis" })
+      .min(1, { message: "Le jeton d'invitation est requis" }),
+  }),
+});
+
+/**
  * La connexion de confort, qui n'existe qu'en développement.
  *
  * Elle lisait `req.body.userId` sans schéma et le passait à `findById` : un

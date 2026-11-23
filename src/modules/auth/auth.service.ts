@@ -195,6 +195,40 @@ export const linkClientToCoach = async (
 };
 
 /**
+ * Ce compte suit-il déjà ce coach ?
+ *
+ * L'écran d'invitation le demande quand le lien s'ouvre sur une session
+ * déjà ouverte : un client de Julie qui rouvre le lien de Julie n'a rien à
+ * rejoindre, et on le mène à son accueil plutôt que de lui poser la
+ * question. Le filtre porte les deux identifiants : le lien d'un autre coach
+ * ne compte pas.
+ */
+export const isLinkedTo = async (
+  userId: Types.ObjectId | string,
+  coachId: Types.ObjectId | string
+): Promise<boolean> =>
+  !!(await Client.exists({ userId, 'coaches.coachId': coachId }));
+
+/**
+ * Rattacher le compte de la session au coach d'un lien d'invitation (F9).
+ *
+ * Jusqu'ici, rejoindre passait toujours par Google, même connecté : le lien
+ * ouvert sur une session existante renvoyait chez Google pour la même
+ * adresse. Le jeton est contrôlé comme au retour de Google — inconnu ou
+ * expiré, rien n'est écrit —, et le rattachement est le même, idempotent.
+ * Rend le coach rejoint, pour que l'écran le nomme.
+ */
+export const joinCoach = async (
+  userId: Types.ObjectId | string,
+  token: string
+): Promise<Types.ObjectId> => {
+  const invToken = await validateInvitationToken(token);
+  const coachId = invToken.coachId as Types.ObjectId;
+  await linkClientToCoach(new Types.ObjectId(String(userId)), coachId);
+  return coachId;
+};
+
+/**
  * Contrôler un jeton d'invitation avant de s'en servir.
  *
  * Deux refus distincts — inconnu, expiré — parce qu'ils n'appellent pas la

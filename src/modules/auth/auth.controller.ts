@@ -12,6 +12,8 @@ import {
   findOrCreateUser,
   linkClientToCoach,
   validateInvitationToken,
+  isLinkedTo,
+  joinCoach,
 } from './auth.service';
 import logger from '../../shared/utils/logger';
 import { TokenPayload } from 'google-auth-library';
@@ -294,6 +296,12 @@ export const verifyInviteToken = catchAsync(
       throw new AppError('Coach introuvable', 500);
     }
 
+    // Sans session, personne à reconnaître : la question ne se pose pas.
+    const sessionUserId = req.session.userId;
+    const alreadyLinked = sessionUserId
+      ? await isLinkedTo(sessionUserId, coach._id)
+      : false;
+
     respond(res, 200, inviteCheckPayload, {
       valid: true,
       coach: {
@@ -302,6 +310,33 @@ export const verifyInviteToken = catchAsync(
         lastName: coach.userId.lastName,
         picture: coach.userId.picture,
       },
+      alreadyLinked,
+    });
+  }
+);
+
+/**
+ * Rejoindre le coach d'un lien avec le compte déjà ouvert (F9).
+ *
+ * L'écran d'invitation demande d'abord « Rejoindre Julie avec ce compte ? » :
+ * rattacher sans demander aurait fait d'un lien ouvert par erreur — sur le
+ * téléphone d'un autre, dans la session d'un coach — un rattachement. La
+ * réponse est l'utilisateur à jour, comme `/me` : il est désormais client,
+ * et le front change d'espace sans relire.
+ */
+export const joinWithInvitation = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) throw new AppError('Non authentifié', 401);
+    const { invitationToken } = req.body as { invitationToken: string };
+
+    await joinCoach(userId, invitationToken);
+
+    const user = await User.findById(userId);
+    if (!user) throw new AppError('Utilisateur introuvable', 404);
+    respond(res, 200, authPayload, {
+      status: 'success',
+      user: await buildUser(user),
     });
   }
 );

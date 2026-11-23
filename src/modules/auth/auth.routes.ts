@@ -2,10 +2,12 @@ import { Router } from 'express';
 import { validate } from '../../shared/middleware/validate';
 import { devRoutesEnabled } from '../../shared/config/env';
 import { authLimiter } from '../../shared/middleware/rateLimits';
+import { authMiddleware } from '../../shared/middleware/auth';
 import {
   devLoginSchema,
   googleAuthSchema,
   googleOneTapSchema,
+  joinSchema,
   verifyInviteTokenSchema,
 } from './auth.schema';
 import {
@@ -14,6 +16,7 @@ import {
   getMe,
   logout,
   verifyInviteToken,
+  joinWithInvitation,
   devLogin,
 } from './auth.controller';
 
@@ -37,6 +40,15 @@ router.get(
   '/verify-invite-token',
   validate(verifyInviteTokenSchema),
   verifyInviteToken
+);
+// Le compte rejoint est celui de la session : la route exige qu'il y en
+// ait une, et ne lit rien d'autre que le jeton.
+router.post(
+  '/join',
+  authLimiter,
+  authMiddleware,
+  validate(joinSchema),
+  joinWithInvitation
 );
 
 // Une connexion sans mot de passe, et seulement là où on l'a voulu. La

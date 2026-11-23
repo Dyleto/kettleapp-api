@@ -59,6 +59,9 @@ export const inviteCheckPayload = z.object({
     lastName: z.string().optional(),
     picture: z.string().optional(),
   }),
+  // Vrai quand le lien s'ouvre sur la session d'un client qui suit déjà ce
+  // coach : l'écran le mène à son accueil sans rien demander (F9).
+  alreadyLinked: z.boolean(),
 });
 
 /** Une réponse qui n'a qu'un message à donner — déconnexion, suppression. */
