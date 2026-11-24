@@ -22,27 +22,10 @@ import {
   importTemplate,
   replaceTemplateSessions,
   templateFromProgram,
+  templateOutput,
   templateRow,
 } from './template.service';
 import type { TemplateFromProgramBody } from './template.schema';
-import type { IProgramTemplate } from '../../models/ProgramTemplate';
-
-/**
- * Un modèle tel qu'il sort, ses séances mises en forme.
- *
- * `formatSession` est celui du programme d'un client : les séances d'un
- * modèle ont la même forme, c'est ce qui permet au même atelier de les
- * éditer.
- */
-const payloadOf = (template: IProgramTemplate) => ({
-  _id: template._id,
-  name: template.name,
-  sessions: (template.sessions as unknown as PopulatedSession[]).map(
-    formatSession
-  ),
-  createdAt: template.createdAt,
-  updatedAt: template.updatedAt,
-});
 
 // GET /api/coach/templates
 //
@@ -82,7 +65,7 @@ export const createTemplate = catchAsync(
     });
 
     respond(res, 201, templateWrapperPayload, {
-      template: payloadOf(template),
+      template: templateOutput(template),
     });
   }
 );
@@ -95,7 +78,9 @@ export const getTemplate = catchAsync(async (req: Request, res: Response) => {
     req.params.id as string
   );
 
-  respond(res, 200, templateWrapperPayload, { template: payloadOf(template) });
+  respond(res, 200, templateWrapperPayload, {
+    template: templateOutput(template),
+  });
 });
 
 /** Dupliquer un modèle : voir `duplicateTemplate`. */
@@ -104,7 +89,7 @@ export const postDuplicate = catchAsync(async (req: Request, res: Response) => {
     coachOf(res)._id,
     req.params.id as string
   );
-  respond(res, 201, templateWrapperPayload, { template: payloadOf(copy) });
+  respond(res, 201, templateWrapperPayload, { template: templateOutput(copy) });
 });
 
 /** « Enregistrer comme modèle » : voir `templateFromProgram`. */
@@ -118,7 +103,7 @@ export const postFromProgram = catchAsync(
       sessionIds
     );
     respond(res, 201, templateWrapperPayload, {
-      template: payloadOf(template),
+      template: templateOutput(template),
     });
   }
 );
@@ -135,7 +120,7 @@ export const renameTemplate = catchAsync(
     await template.populate('sessions.blocks.exercises.exerciseId');
 
     respond(res, 200, templateWrapperPayload, {
-      template: payloadOf(template),
+      template: templateOutput(template),
     });
   }
 );
@@ -153,7 +138,7 @@ export const updateTemplateSessions = catchAsync(
     );
 
     respond(res, 200, templateWrapperPayload, {
-      template: payloadOf(template),
+      template: templateOutput(template),
     });
   }
 );

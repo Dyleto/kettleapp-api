@@ -103,6 +103,13 @@ absents : Mongoose les rend comme des objets dont les clés valent
 `undefined`. `vacant()` les ramène à `undefined` ; sans lui, `metrics` et
 `customMetric` faisaient répondre 500 à tout l'historique.
 
+Et aux sous-documents : un document hydraté ne se recopie pas par
+`{ ...doc }`, qui ne garde que ses rouages (`$__`, `_doc`) et pas ses
+champs, rangés sur le prototype. Les séances d'un modèle sont des
+sous-documents, et `formatSession` les recopiait ainsi : tout modèle qui
+portait une séance répondait 500, après avoir écrit. Ce qui sort passe par
+`.lean()` ou `toObject()` d'abord (`templateOutput`).
+
 ## La discipline de vérification
 
 Un vert ne vaut que si on l'a cassé. Pour chaque mécanisme vérifié, on le
@@ -119,7 +126,7 @@ d'une séance laisse passer, ce que décide `applySessionResults` — le réalis
 des séries, les tours bouclés, le résultat d'une échelle ou d'un chipper — et,
 sur des applications Express nues montées avec supertest, le gestionnaire
 d'erreurs, les gardes, la validation, les plafonds et le contrat de sortie.
-289 tests.
+292 tests.
 
 Il remplace huit scripts `verify:*`, qui portaient chacun sa copie d'un
 `ok(label, condition)`. Les trois premiers convertis lui ont valu deux défauts

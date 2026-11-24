@@ -9,6 +9,10 @@ import { AppError } from '../../shared/utils/AppError';
 import { replaceProgramSessions } from '../program/program.service';
 import type { SessionInput } from '../program/program.schema';
 import type { ISession, ISessionBlock } from '../../models/Session';
+import {
+  formatSession,
+  PopulatedSession,
+} from '../../shared/utils/sessionFormatter';
 
 /**
  * Le modèle demandé, s'il appartient bien à ce coach.
@@ -34,6 +38,37 @@ export const getOwnTemplate = async (
   });
   if (!template) throw new AppError('Modèle introuvable', 404);
   return template;
+};
+
+/**
+ * Un modèle tel qu'il sort, ses séances mises en forme.
+ *
+ * `formatSession` est celui du programme d'un client : les séances d'un
+ * modèle ont la même forme, c'est ce qui permet au même atelier de les
+ * éditer.
+ *
+ * `toObject()` d'abord, et c'est tout le défaut réparé ici. Les séances
+ * d'un modèle sont des sous-documents, et `formatSession` les recopie par
+ * `{ ...session }` : sur un sous-document Mongoose, la recopie ne garde que
+ * ses rouages (`$__`, `_doc`), pas ses champs, qui vivent sur le
+ * prototype. La séance sortait sans `_id` ni `order`, le contrat la
+ * refusait, et l'API répondait 500 après avoir écrit — ouvrir un modèle,
+ * l'enregistrer, le dupliquer, « Enregistrer comme modèle », dès qu'il
+ * portait une séance. Les séances d'un programme sortent par `.lean()` et
+ * n'avaient pas ce défaut ; le banc du front non plus, dont le serveur
+ * d'essai rend des objets ordinaires.
+ */
+export const templateOutput = (template: IProgramTemplate) => {
+  const plain = template.toObject() as IProgramTemplate;
+  return {
+    _id: plain._id,
+    name: plain.name,
+    sessions: (plain.sessions as unknown as PopulatedSession[]).map(
+      formatSession
+    ),
+    createdAt: plain.createdAt,
+    updatedAt: plain.updatedAt,
+  };
 };
 
 /**
