@@ -3,12 +3,11 @@ import { catchAsync } from '../../shared/utils/catchAsync';
 import { AppError } from '../../shared/utils/AppError';
 import { coachOf } from '../../shared/middleware/roles';
 import Exercise from '../../models/Exercise';
-import Session from '../../models/Session';
 import { Types } from 'mongoose';
 import { respond } from '../../shared/utils/respond';
 import { exercisePayload } from '../../contract';
 import { z } from 'zod';
-import { exerciseUsage } from './exercise.service';
+import { exerciseInUse, exerciseUsage } from './exercise.service';
 
 /**
  * La bibliothèque du coach, chaque exercice avec son usage : combien de
@@ -124,16 +123,14 @@ export const deleteExercise = catchAsync(
     const coach = coachOf(res);
     const { id } = req.params;
 
-    const usedInSession = await Session.findOne({
-      'blocks.exercises.exerciseId': id,
-    });
-
-    if (usedInSession) {
+    const usedIn = await exerciseInUse(id as string);
+    if (usedIn)
       throw new AppError(
-        'Cet exercice est utilisé dans une séance, impossible de le supprimer',
+        usedIn === 'template'
+          ? 'Cet exercice est utilisé dans un modèle, impossible de le supprimer'
+          : 'Cet exercice est utilisé dans une séance, impossible de le supprimer',
         400
       );
-    }
 
     const result = await Exercise.deleteOne({ _id: id, createdBy: coach._id });
 

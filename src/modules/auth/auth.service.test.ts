@@ -9,6 +9,7 @@
 import { Types } from 'mongoose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Client from '../../models/Client';
+import Coach from '../../models/Coach';
 import InvitationToken from '../../models/InvitationToken';
 import { isLinkedTo, joinCoach } from './auth.service';
 
@@ -16,6 +17,8 @@ import { isLinkedTo, joinCoach } from './auth.service';
 // l'être vraiment.
 const SARAH = new Types.ObjectId('64a000000000000000000001');
 const JULIE = new Types.ObjectId('64c000000000000000000001');
+/** Le compte de Julie, la personne derrière le coach. */
+const JULIE_USER = new Types.ObjectId('64a000000000000000000002');
 const TOMORROW = new Date('2999-01-01T00:00:00Z');
 const YESTERDAY = new Date('2000-01-01T00:00:00Z');
 
@@ -44,6 +47,11 @@ describe('rejoindre avec le compte ouvert', () => {
     vi
       .spyOn(InvitationToken, 'findOne')
       .mockResolvedValue({ coachId: JULIE, expiresAt } as never);
+  /** Le coach du lien, et le compte qui le tient. */
+  const coachOf = (userId: Types.ObjectId) =>
+    vi.spyOn(Coach, 'findById').mockReturnValue({
+      select: async () => ({ _id: JULIE, userId }),
+    } as never);
   const writes = () => ({
     upsert: vi
       .spyOn(Client, 'findOneAndUpdate')
@@ -55,6 +63,7 @@ describe('rejoindre avec le compte ouvert', () => {
 
   it('rattache le compte de la session au coach du lien', async () => {
     token(TOMORROW);
+    coachOf(JULIE_USER);
     const { push } = writes();
     expect(String(await joinCoach(String(SARAH), 'jeton'))).toBe(String(JULIE));
     const [filter, update] = push.mock.calls[0] as unknown as [
@@ -67,10 +76,25 @@ describe('rejoindre avec le compte ouvert', () => {
 
   it('un lien expiré n’écrit rien', async () => {
     token(YESTERDAY);
+    coachOf(JULIE_USER);
     const { upsert, push } = writes();
     await expect(joinCoach(SARAH, 'jeton')).rejects.toThrow(
       "Token d'invitation expiré"
     );
+    expect(upsert).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  // Le coach qui essaie son lien devenait son propre client, et sa liste
+  // le comptait.
+  it('le coach qui ouvre son propre lien ne le rejoint pas : 409, rien d’écrit', async () => {
+    token(TOMORROW);
+    const find = coachOf(JULIE_USER);
+    const { upsert, push } = writes();
+    await expect(joinCoach(String(JULIE_USER), 'jeton')).rejects.toMatchObject({
+      statusCode: 409,
+    });
+    expect(find).toHaveBeenCalledWith(JULIE);
     expect(upsert).not.toHaveBeenCalled();
     expect(push).not.toHaveBeenCalled();
   });

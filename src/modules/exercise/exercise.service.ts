@@ -1,5 +1,7 @@
 import { PipelineStage, Types } from 'mongoose';
 import Client from '../../models/Client';
+import Session from '../../models/Session';
+import ProgramTemplate from '../../models/ProgramTemplate';
 
 /** Ce qu'on sait de l'usage d'un exercice : dans combien de séances du
  * coach il apparaît, et chez combien de ses clients. */
@@ -91,3 +93,26 @@ export const exerciseUsage = async (
   coachId: Types.ObjectId
 ): Promise<Map<string, ExerciseUsage>> =>
   usageByExercise(await Client.aggregate<UsageRow>(usagePipeline(coachId)));
+
+/**
+ * Où un exercice sert encore : dans la séance d'un programme, dans celle
+ * d'un modèle, ou nulle part.
+ *
+ * Les modèles manquaient : un exercice qui ne servait que dans un modèle se
+ * supprimait, et le modèle répondait 500 ensuite — son mouvement repeuplé à
+ * `null`, que le contrat refuse —, puis le programme de chaque client chez
+ * qui on l'importait (revue de develop).
+ */
+export const exerciseInUse = async (
+  exerciseId: string
+): Promise<'session' | 'template' | null> => {
+  if (await Session.exists({ 'blocks.exercises.exerciseId': exerciseId }))
+    return 'session';
+  if (
+    await ProgramTemplate.exists({
+      'sessions.blocks.exercises.exerciseId': exerciseId,
+    })
+  )
+    return 'template';
+  return null;
+};

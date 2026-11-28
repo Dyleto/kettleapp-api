@@ -111,7 +111,10 @@ export const replaceTemplateSessions = async (
   template.set(
     'sessions',
     sessions.map((input, index) => ({
-      _id: input._id,
+      // Un identifiant que l'atelier a inventé — une séance pas encore
+      // enregistrée — n'en est pas un pour Mongoose, qui répondait 400 à
+      // tout le modèle. Il en reçoit un, comme au programme d'un client.
+      _id: isValidObjectId(input._id) ? input._id : undefined,
       order: index + 1,
       name: input.name ?? '',
       notes: input.notes,
@@ -171,6 +174,14 @@ export const importTemplate = async (
   requestId = '?'
 ): Promise<ISession[]> => {
   const template = await getOwnTemplate(coachId, templateId);
+  // Vide, il remplaçait le programme du client par rien : toutes ses
+  // séances supprimées, sans un mot (revue de develop). Comme on ne crée
+  // pas de modèle vide depuis un programme, on n'en importe pas.
+  if (template.sessions.length === 0)
+    throw new AppError(
+      'Ce modèle n’a pas encore de séance : il n’y a rien à importer.',
+      409
+    );
 
   // `toObject()` sur le document entier plutôt que bloc par bloc : les
   // séances embarquées sont des sous-documents Mongoose, et

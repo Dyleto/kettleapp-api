@@ -23,6 +23,7 @@ import {
   importTemplate,
   pickSessions,
   recordImport,
+  replaceTemplateSessions,
   sessionsAfter,
   templateFromProgram,
   templateRow,
@@ -162,6 +163,25 @@ describe('le compteur d’usage', () => {
       .mockResolvedValue({} as never);
     await importTemplate(COACH, SARAH, String(TEMPLATE));
     expect(update).toHaveBeenCalledOnce();
+  });
+
+  // Vide, il remplaçait le programme du client par rien.
+  it('un modèle sans séance ne s’importe pas : 409, le programme intact', async () => {
+    vi.spyOn(ProgramTemplate, 'findOne').mockResolvedValue(
+      ProgramTemplate.hydrate({
+        _id: TEMPLATE,
+        coachId: COACH,
+        name: 'Prépa',
+        sessions: [],
+        importedFor: [],
+      }) as never
+    );
+    const update = vi.spyOn(ProgramTemplate, 'updateOne');
+    await expect(
+      importTemplate(COACH, SARAH, String(TEMPLATE))
+    ).rejects.toMatchObject({ statusCode: 409 });
+    expect(replaceProgramSessions).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
   });
 
   // Après et non avant : un import qui échoue n'a servi à personne.
@@ -478,5 +498,29 @@ describe('autour des requêtes', () => {
     });
     expect(program).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
+  });
+});
+
+describe('les séances qu’envoie l’atelier d’un modèle', () => {
+  // Une séance pas encore enregistrée porte l'identifiant que l'atelier lui
+  // a donné : Mongoose répondait 400 à tout le modèle.
+  it('un identifiant inventé est remplacé, un vrai est gardé', async () => {
+    const doc = ProgramTemplate.hydrate({
+      _id: TEMPLATE,
+      coachId: COACH,
+      name: 'Prise de masse',
+      sessions: [],
+    });
+    vi.spyOn(ProgramTemplate, 'findOne').mockResolvedValue(doc as never);
+    vi.spyOn(doc, 'save').mockResolvedValue(doc as never);
+    vi.spyOn(doc, 'populate').mockResolvedValue(doc as never);
+    const set = vi.spyOn(doc, 'set');
+    await replaceTemplateSessions(COACH, String(TEMPLATE), [
+      { _id: 'tmp-1', blocks: [] },
+      { _id: String(S2), blocks: [] },
+    ] as never);
+    const written = set.mock.calls[0][1] as { _id?: unknown }[];
+    expect(written[0]._id).toBeUndefined();
+    expect(String(written[1]._id)).toBe(String(S2));
   });
 });

@@ -6,8 +6,7 @@ import Client from '../../models/Client';
 import Program from '../../models/Program';
 import Session from '../../models/Session';
 import CompletedSession from '../../models/CompletedSession';
-import Exercise from '../../models/Exercise';
-import InvitationToken from '../../models/InvitationToken';
+import { coachOwned } from './account.service';
 import { catchAsync } from '../../shared/utils/catchAsync';
 import { AppError } from '../../shared/utils/AppError';
 import logger from '../../shared/utils/logger';
@@ -161,14 +160,7 @@ export const deleteAccount = catchAsync(async (req: Request, res: Response) => {
           { $pull: { coaches: { coachId: coach._id } } },
           { session: dbSession }
         );
-        await Exercise.deleteMany(
-          { createdBy: coach._id },
-          { session: dbSession }
-        );
-        await InvitationToken.deleteMany(
-          { coachId: coach._id },
-          { session: dbSession }
-        );
+        for (const remove of coachOwned(coach._id)) await remove(dbSession);
         await Coach.deleteOne({ _id: coach._id }, { session: dbSession });
       }
 

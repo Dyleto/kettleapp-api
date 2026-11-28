@@ -3,6 +3,7 @@ import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { Types } from 'mongoose';
 import User, { IUser } from '../../models/User';
 import Client from '../../models/Client';
+import Coach from '../../models/Coach';
 import InvitationToken from '../../models/InvitationToken';
 import { AppError } from '../../shared/utils/AppError';
 import logger from '../../shared/utils/logger';
@@ -170,6 +171,18 @@ export const linkClientToCoach = async (
   userId: Types.ObjectId,
   coachId: Types.ObjectId
 ): Promise<void> => {
+  // Le coach qui ouvre son propre lien — pour l'essayer, le plus souvent —
+  // devenait son propre client : un dossier client à son nom, lui-même dans
+  // sa liste et dans « À lire », et l'espace client à la connexion suivante
+  // (revue de develop). Refusé ici, ce qui couvre les deux chemins : le
+  // retour de Google et « Rejoindre » avec la session ouverte.
+  const coach = await Coach.findById(coachId).select('userId');
+  if (coach && String(coach.userId) === String(userId))
+    throw new AppError(
+      'C’est ton propre lien d’invitation : envoie-le à ton client.',
+      409
+    );
+
   // Créer le client s'il n'existe pas, en une seule écriture.
   await Client.findOneAndUpdate(
     { userId },

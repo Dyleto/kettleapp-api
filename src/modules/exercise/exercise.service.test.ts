@@ -8,7 +8,10 @@
 import { Types } from 'mongoose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Client from '../../models/Client';
+import Session from '../../models/Session';
+import ProgramTemplate from '../../models/ProgramTemplate';
 import {
+  exerciseInUse,
   exerciseUsage,
   usageByExercise,
   usagePipeline,
@@ -66,5 +69,39 @@ describe('ce qu’on fait de ce qu’elle rend', () => {
     expect(aggregate).toHaveBeenCalledWith(usagePipeline(JULIE));
     // Deux nombres distincts : égaux, une inversion ne se verrait pas.
     expect(usage.get(String(SWING))).toEqual({ sessions: 5, clients: 2 });
+  });
+});
+
+describe('où un exercice sert encore', () => {
+  const where = (inSession: boolean, inTemplate: boolean) => ({
+    session: vi
+      .spyOn(Session, 'exists')
+      .mockResolvedValue((inSession ? { _id: SWING } : null) as never),
+    template: vi
+      .spyOn(ProgramTemplate, 'exists')
+      .mockResolvedValue((inTemplate ? { _id: SWING } : null) as never),
+  });
+
+  // Supprimé alors qu'un modèle le portait, il faisait répondre 500 au
+  // modèle, puis aux programmes où on l'importait.
+  it('dans un modèle seulement : il sert, et la séance d’un modèle est cherchée', async () => {
+    const { template } = where(false, true);
+    expect(await exerciseInUse(String(SWING))).toBe('template');
+    expect(template).toHaveBeenCalledWith({
+      'sessions.blocks.exercises.exerciseId': String(SWING),
+    });
+  });
+
+  it('dans une séance de programme : il sert', async () => {
+    const { session } = where(true, false);
+    expect(await exerciseInUse(String(SWING))).toBe('session');
+    expect(session).toHaveBeenCalledWith({
+      'blocks.exercises.exerciseId': String(SWING),
+    });
+  });
+
+  it('nulle part : il peut partir', async () => {
+    where(false, false);
+    expect(await exerciseInUse(String(SQUAT))).toBeNull();
   });
 });

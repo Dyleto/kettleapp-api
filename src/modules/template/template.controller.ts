@@ -51,7 +51,11 @@ export const listTemplates = catchAsync(
   }
 );
 
-// POST /api/coach/templates
+/**
+ * Créer un modèle, sans séance : le coach le nomme, puis l'écrit dans son
+ * atelier. Vide, il ne s'importe pas (`importTemplate`) — c'est le seul état
+ * où il peut l'être, et il ne dure que le temps de le remplir.
+ */
 export const createTemplate = catchAsync(
   async (req: Request, res: Response) => {
     const coach = coachOf(res);
@@ -74,7 +78,11 @@ export const createTemplate = catchAsync(
   }
 );
 
-// GET /api/coach/templates/:id
+/**
+ * Un modèle entier, séances peuplées : l'atelier en a besoin pour écrire.
+ * `getOwnTemplate` borne au coach — le modèle d'un autre est introuvable,
+ * et non interdit, pour ne pas confirmer qu'il existe.
+ */
 export const getTemplate = catchAsync(async (req: Request, res: Response) => {
   const coach = coachOf(res);
   const template = await getOwnTemplatePopulated(
@@ -128,7 +136,11 @@ export const postSessionsFromProgram = catchAsync(
   }
 );
 
-// PATCH /api/coach/templates/:id
+/**
+ * Renommer, et rien d'autre : les séances ont leur propre route, comme pour
+ * le programme d'un client, pour que le nom tapé ne renvoie pas tout
+ * l'atelier.
+ */
 export const renameTemplate = catchAsync(
   async (req: Request, res: Response) => {
     const coach = coachOf(res);
@@ -145,7 +157,11 @@ export const renameTemplate = catchAsync(
   }
 );
 
-// PUT /api/coach/templates/:id/sessions
+/**
+ * Remplacer les séances d'un modèle par celles de l'atelier : l'état entier
+ * et non des modifications, pour que deux envois identiques — l'atelier peut
+ * en faire partir deux avant la première réponse — donnent le même modèle.
+ */
 export const updateTemplateSessions = catchAsync(
   async (req: Request, res: Response) => {
     const coach = coachOf(res);
@@ -163,7 +179,10 @@ export const updateTemplateSessions = catchAsync(
   }
 );
 
-// DELETE /api/coach/templates/:id
+/**
+ * Supprimer un modèle. Les programmes où il a été importé n'en dépendent
+ * pas : l'import en a fait des copies, que rien ne relie au modèle.
+ */
 export const deleteTemplate = catchAsync(
   async (req: Request, res: Response) => {
     const coach = coachOf(res);
