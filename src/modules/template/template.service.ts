@@ -1,6 +1,7 @@
 import { Types, isValidObjectId } from 'mongoose';
 import ProgramTemplate, {
   IProgramTemplate,
+  ITemplateSession,
 } from '../../models/ProgramTemplate';
 import Program from '../../models/Program';
 import Session from '../../models/Session';
@@ -292,6 +293,26 @@ export const templateSessionsFrom = (sessions: readonly SessionSource[]) =>
   }));
 
 /**
+ * Le plafond d'un modèle : trente séances, celui d'un programme. Un modèle
+ * devient un programme à l'import, et un modèle plus long serait impossible
+ * à importer.
+ */
+export const TEMPLATE_SESSION_MAX = 30;
+
+/**
+ * Des séances qui viennent à la suite de `count` autres : comme
+ * `templateSessionsFrom`, le rang partant du dernier.
+ */
+export const sessionsAfter = (
+  count: number,
+  sessions: readonly SessionSource[]
+) =>
+  templateSessionsFrom(sessions).map((session) => ({
+    ...session,
+    order: count + session.order,
+  }));
+
+/**
  * Dupliquer un modèle, sous un nom qui dit que c'est une copie.
  *
  * La copie n'a jamais été importée : son compteur part de zéro.
@@ -359,6 +380,52 @@ export const templateFromProgram = async (
     name,
     sessions: templateSessionsFrom(picked),
   });
+  await template.populate('sessions.blocks.exercises.exerciseId');
+  return template;
+};
+
+/**
+ * « Copier vers un modèle » : des séances d'un client, ajoutées à la fin
+ * d'un modèle qui existe déjà.
+ *
+ * Le pendant de `templateFromProgram`, qui en crée un neuf. Sans lui, le
+ * coach recopiait la séance à la main dans l'atelier du modèle, ou en
+ * créait un modèle de plus à chaque fois (retour de terrain : « j'arrive
+ * pas à copier une séance dans le modèle »).
+ *
+ * Écrit au serveur, et non relu puis renvoyé en entier par le front : le
+ * modèle ne transite pas, et la séance est celle que le coach a vraiment
+ * enregistrée chez ce client.
+ *
+ * Le modèle d'abord : un modèle qui n'est pas à ce coach s'arrête là, avant
+ * qu'aucun programme ne soit lu. Au-delà de trente séances, 409 et rien
+ * d'écrit — le modèle existe, c'est son état qui refuse.
+ */
+export const appendProgramSessions = async (
+  coachId: Types.ObjectId,
+  templateId: string,
+  clientId: string,
+  sessionIds: readonly string[]
+): Promise<IProgramTemplate> => {
+  const template = await getOwnTemplate(coachId, templateId);
+  const client = await getAuthorizedClient(coachId, clientId);
+  const program = await Program.findOne({ clientId: client._id });
+  const sessions = program
+    ? await Session.find({ programId: program._id }).sort({ order: 1 }).lean()
+    : [];
+
+  const picked = pickSessions(sessions, sessionIds);
+  if (picked.length === 0) throw new AppError('Aucune séance à copier', 404);
+  const count = template.sessions.length;
+  if (count + picked.length > TEMPLATE_SESSION_MAX)
+    throw new AppError('Ce modèle a déjà trente séances, le plafond', 409);
+
+  // Des objets ordinaires : Mongoose en fait des sous-documents, avec leur
+  // identifiant et leurs dates, à l'ajout.
+  template.sessions.push(
+    ...(sessionsAfter(count, picked) as unknown as ITemplateSession[])
+  );
+  await template.save();
   await template.populate('sessions.blocks.exercises.exerciseId');
   return template;
 };

@@ -24,8 +24,12 @@ import {
   templateFromProgram,
   templateOutput,
   templateRow,
+  appendProgramSessions,
 } from './template.service';
-import type { TemplateFromProgramBody } from './template.schema';
+import type {
+  AppendFromProgramBody,
+  TemplateFromProgramBody,
+} from './template.schema';
 
 // GET /api/coach/templates
 //
@@ -103,6 +107,22 @@ export const postFromProgram = catchAsync(
       sessionIds
     );
     respond(res, 201, templateWrapperPayload, {
+      template: templateOutput(template),
+    });
+  }
+);
+
+/** « Copier vers un modèle » : voir `appendProgramSessions`. */
+export const postSessionsFromProgram = catchAsync(
+  async (req: Request, res: Response) => {
+    const { clientId, sessionIds } = req.body as AppendFromProgramBody;
+    const template = await appendProgramSessions(
+      coachOf(res)._id,
+      req.params.id as string,
+      clientId,
+      sessionIds
+    );
+    respond(res, 200, templateWrapperPayload, {
       template: templateOutput(template),
     });
   }

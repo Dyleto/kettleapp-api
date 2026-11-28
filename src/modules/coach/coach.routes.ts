@@ -33,6 +33,7 @@ import {
 import { inboxQuerySchema, markViewedSchema } from '../inbox/inbox.schema';
 import { writeReplySchema } from '../reply/reply.schema';
 import {
+  appendFromProgramSchema,
   createTemplateSchema,
   importTemplateSchema,
   renameTemplateSchema,
@@ -158,6 +159,11 @@ router.put(
   '/templates/:id/sessions',
   validate(updateTemplateSessionsSchema),
   template.updateTemplateSessions
+);
+router.post(
+  '/templates/:id/sessions/from-program',
+  validate(appendFromProgramSchema),
+  template.postSessionsFromProgram
 );
 router.delete(
   '/templates/:id',

@@ -75,6 +75,28 @@ export const templateFromProgramSchema = z.object({
   }),
 });
 
+/**
+ * « Copier vers un modèle » : des séances d'un client, ajoutées à la suite
+ * d'un modèle qui existe déjà.
+ *
+ * Comme pour « Enregistrer comme modèle », rien de la séance ne voyage : on
+ * nomme le client et les séances, le serveur les relit. La liste est exigée
+ * et non vide — sans elle, la route copierait tout un programme dans un
+ * modèle déjà rempli, ce que personne ne demande depuis le menu d'une
+ * séance.
+ */
+export const appendFromProgramSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  body: z.object({
+    clientId: objectId,
+    sessionIds: z.array(objectId).min(1).max(30),
+  }),
+});
+
+export type AppendFromProgramBody = z.infer<
+  typeof appendFromProgramSchema
+>['body'];
+
 export type TemplateFromProgramBody = z.infer<
   typeof templateFromProgramSchema
 >['body'];

@@ -1,7 +1,7 @@
 /**
  * Ce que la bibliothèque de modèles décide, sans base de données : le
- * compteur d'usage, la copie d'un modèle, et le modèle tiré du programme
- * d'un client.
+ * compteur d'usage, la copie d'un modèle, le modèle tiré du programme d'un
+ * client, et les séances d'un client copiées dans un modèle existant.
  *
  * `replaceProgramSessions` est remplacé pour tout le fichier : l'import
  * réécrit le programme d'un client dans une autre collection, et ce qui est
@@ -17,16 +17,21 @@ import Client from '../../models/Client';
 import { replaceProgramSessions } from '../program/program.service';
 import { templateRowPayload } from '../../contract';
 import {
+  appendProgramSessions,
   copyName,
   duplicateTemplate,
   importTemplate,
   pickSessions,
   recordImport,
+  sessionsAfter,
   templateFromProgram,
   templateRow,
   templateSessionsFrom,
 } from './template.service';
-import { templateFromProgramSchema } from './template.schema';
+import {
+  appendFromProgramSchema,
+  templateFromProgramSchema,
+} from './template.schema';
 
 vi.mock('../program/program.service', () => ({
   replaceProgramSessions: vi.fn(async () => []),
@@ -217,6 +222,37 @@ describe('des séances pour un nouveau modèle', () => {
   });
 });
 
+describe('des séances à la suite d’un modèle', () => {
+  const [added] = sessionsAfter(2, [stored(S3, 9, 'C')]) as Record<
+    string,
+    unknown
+  >[];
+
+  // Le rang de la séance dans le programme du client ne dit rien de sa
+  // place dans le modèle.
+  it('le rang part de la dernière séance du modèle', () => {
+    expect(added.order).toBe(3);
+  });
+
+  it('sans identifiant : c’est une nouvelle séance du modèle', () => {
+    expect(added).not.toHaveProperty('_id');
+    expect(added.name).toBe('C');
+  });
+
+  // Sans liste, la route copierait tout un programme dans un modèle déjà
+  // rempli.
+  it('la route exige une liste de séances, et non vide', () => {
+    const parse = (body: Record<string, unknown>) =>
+      appendFromProgramSchema.safeParse({
+        params: { id: String(TEMPLATE) },
+        body: { clientId: String(SARAH), ...body },
+      }).success;
+    expect(parse({ sessionIds: [String(S1)] })).toBe(true);
+    expect(parse({})).toBe(false);
+    expect(parse({ sessionIds: [] })).toBe(false);
+  });
+});
+
 describe('quelles séances deviennent un modèle', () => {
   const program = [stored(S1, 1, 'A'), stored(S2, 2, 'B'), stored(S3, 3, 'C')];
 
@@ -341,5 +377,106 @@ describe('autour des requêtes', () => {
       'coaches.coachId': COACH,
     });
     expect(program).not.toHaveBeenCalled();
+  });
+  /** Un modèle de ce coach qui porte `count` séances ; son écriture est
+   * espionnée. */
+  const ownTemplate = (count: number) => {
+    const doc = ProgramTemplate.hydrate({
+      _id: TEMPLATE,
+      coachId: COACH,
+      name: 'Prise de masse',
+      sessions: Array.from({ length: count }, (_, i) => ({
+        _id: new Types.ObjectId(
+          `64f0000000000000000001${String(i).padStart(2, '0')}`
+        ),
+        order: i + 1,
+        name: `M${i + 1}`,
+        blocks: [],
+      })),
+    });
+    const save = vi.spyOn(doc, 'save').mockResolvedValue(doc as never);
+    vi.spyOn(doc, 'populate').mockResolvedValue(doc as never);
+    vi.spyOn(ProgramTemplate, 'findOne').mockResolvedValue(doc as never);
+    return { doc, save };
+  };
+
+  it('une séance du client s’ajoute à la fin du modèle, relue par le serveur', async () => {
+    const { doc, save } = ownTemplate(2);
+    const find = programOf([stored(S1, 1, 'A'), stored(S2, 2, 'B')]);
+    await appendProgramSessions(COACH, String(TEMPLATE), String(SARAH), [
+      String(S2),
+    ]);
+    expect(find).toHaveBeenCalledWith({ programId: PROGRAM });
+    expect(doc.sessions.map((s) => [s.name, s.order])).toEqual([
+      ['M1', 1],
+      ['M2', 2],
+      ['B', 3],
+    ]);
+    expect(save).toHaveBeenCalledOnce();
+  });
+
+  // Un modèle plus long qu'un programme ne s'importerait plus.
+  it('au-delà de trente séances : 409, et rien d’écrit', async () => {
+    const { doc, save } = ownTemplate(29);
+    programOf([stored(S1, 1, 'A'), stored(S2, 2, 'B')]);
+    await expect(
+      appendProgramSessions(COACH, String(TEMPLATE), String(SARAH), [
+        String(S1),
+        String(S2),
+      ])
+    ).rejects.toMatchObject({ statusCode: 409 });
+    expect(save).not.toHaveBeenCalled();
+    expect(doc.sessions).toHaveLength(29);
+  });
+
+  it('une séance qui n’est pas de ce programme : 404, et rien d’écrit', async () => {
+    const { save } = ownTemplate(1);
+    programOf([stored(S1, 1, 'A')]);
+    await expect(
+      appendProgramSessions(COACH, String(TEMPLATE), String(SARAH), [
+        String(S3),
+      ])
+    ).rejects.toMatchObject({ statusCode: 404 });
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  // Le modèle d'abord : celui d'un autre coach arrête tout, avant qu'aucun
+  // programme ne soit lu.
+  it('le modèle d’un autre coach : 404, et aucun programme n’est lu', async () => {
+    const find = vi
+      .spyOn(ProgramTemplate, 'findOne')
+      .mockResolvedValue(null as never);
+    const client = vi.spyOn(Client, 'findOne');
+    const program = vi.spyOn(Program, 'findOne');
+    await expect(
+      appendProgramSessions(COACH, String(TEMPLATE), String(SARAH), [
+        String(S1),
+      ])
+    ).rejects.toMatchObject({ statusCode: 404 });
+    expect(find).toHaveBeenCalledWith({
+      _id: String(TEMPLATE),
+      coachId: COACH,
+    });
+    expect(client).not.toHaveBeenCalled();
+    expect(program).not.toHaveBeenCalled();
+  });
+
+  it('le programme d’un client qui n’est pas le sien ne se lit pas, et rien n’est écrit', async () => {
+    const { save } = ownTemplate(1);
+    const authorize = vi
+      .spyOn(Client, 'findOne')
+      .mockResolvedValue(null as never);
+    const program = vi.spyOn(Program, 'findOne');
+    await expect(
+      appendProgramSessions(COACH, String(TEMPLATE), String(SARAH), [
+        String(S1),
+      ])
+    ).rejects.toMatchObject({ statusCode: 404 });
+    expect(authorize).toHaveBeenCalledWith({
+      _id: String(SARAH),
+      'coaches.coachId': COACH,
+    });
+    expect(program).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
   });
 });
